@@ -545,10 +545,16 @@ class StudioApp {
             await Promise.all([syncPromise(vBase), syncPromise(vSolo)]);
 
             // 3. Preparar o Canvas (Lado a Lado)
+            // Se o navegador não conseguiu ler a resolução (0x0), forçamos uma proporção para não criar canvas invisível
+            const wBase = vBase.videoWidth || 640;
+            const hBase = vBase.videoHeight || 480;
+            const wSolo = vSolo.videoWidth || 640;
+            const hSolo = vSolo.videoHeight || 480;
+
             const canvas = document.createElement('canvas');
-            canvas.width = vBase.videoWidth + vSolo.videoWidth;
-            canvas.height = Math.max(vBase.videoHeight, vSolo.videoHeight);
-            const ctx = canvas.getContext('2d');
+            canvas.width = wBase + wSolo;
+            canvas.height = Math.max(hBase, hSolo);
+            const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Otimização Safari
 
             const audioDest = renderCtx.createMediaStreamDestination();
 
@@ -577,26 +583,40 @@ class StudioApp {
                 videoStream = audioDest.stream; // Fallback extremo
             }
 
-            // Descobrir melhor MimeType suportado
-            let mimeType = 'video/webm;codecs=vp8,opus';
-            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm'; // fallback seguro
-            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/mp4';
+            // Descobrir melhor MimeType suportado garantindo arquivos portáteis
+            let mimeType = 'video/mp4';
+            if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+                mimeType = 'video/webm;codecs=vp8,opus';
+            } else if (MediaRecorder.isTypeSupported('video/webm')) {
+                mimeType = 'video/webm';
+            }
 
             let recorder;
             try {
                 recorder = new MediaRecorder(videoStream, { mimeType, videoBitsPerSecond: 3000000 });
             } catch (e) {
-                recorder = new MediaRecorder(videoStream); // Fallback absoluto
+                try {
+                    recorder = new MediaRecorder(videoStream, { mimeType: 'video/mp4' });
+                } catch (e2) {
+                    recorder = new MediaRecorder(videoStream); // Fallback absoluto
+                }
             }
 
             let finalChunks = [];
-            recorder.ondataavailable = e => { if (e.data.size > 0) finalChunks.push(e.data); };
+            recorder.ondataavailable = e => {
+                if (e.data && e.data.size > 0) finalChunks.push(e.data);
+            };
 
             recorder.onstop = () => {
                 cancelAnimationFrame(this.renderLoopId);
-                const finalBlob = new Blob(finalChunks, { type: recorder.mimeType || mimeType });
+                const actualMime = recorder.mimeType || mimeType || 'video/mp4';
+                const finalBlob = new Blob(finalChunks, { type: actualMime });
                 const url = URL.createObjectURL(finalBlob);
-                const ext = (recorder.mimeType || mimeType).includes('mp4') ? 'mp4' : 'webm';
+
+                // Força MP4 se for Apple/Mobile para garantir compatibilidade via File manager local
+                let ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
+                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) ext = 'mp4';
+
                 const fileName = `MaestroPro_VideoMix_${Date.now()}.${ext}`;
 
                 this.btnExport.innerHTML = `<a href="${url}" download="${fileName}" class="w-full h-full flex items-center justify-center gap-2"><i class="fas fa-download"></i> Baixar Vídeo Final</a>`;
@@ -627,7 +647,9 @@ class StudioApp {
 
             // Iniciar o Processo em Sincronia Rígida
             this.renderLoopId = requestAnimationFrame(renderLoop);
-            recorder.start(100); // chunking reduz uso de RAM
+
+            // Requer chunking regular para garantir envio de dados ao Blob em Androids Problemáticos
+            recorder.start(500);
 
             // 7. Controle de Duração (Menor Tempo Manda)
             const minDurationMs = Math.min((this.baseDuration || 0), (this.soloDuration || 0)) * 1000;
