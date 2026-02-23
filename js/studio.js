@@ -245,8 +245,10 @@ class StudioApp {
 
             // Libera Mixagem
             document.getElementById('studio-mixer').classList.remove('opacity-50', 'pointer-events-none');
-            this.btnPreview.classList.remove('disabled', 'pointer-events-none');
-            this.btnExport.classList.remove('disabled', 'pointer-events-none');
+            this.btnPreview.removeAttribute('disabled');
+            this.btnPreview.classList.remove('pointer-events-none');
+            this.btnExport.removeAttribute('disabled');
+            this.btnExport.classList.remove('pointer-events-none');
 
             // Desligar câmera e mostrar o vídeo do Solo na tela
             this.turnOffCamera();
@@ -409,8 +411,10 @@ class StudioApp {
 
             this.btnRecSolo.classList.add('cursor-not-allowed', 'opacity-50', 'pointer-events-none');
             document.getElementById('studio-mixer').classList.add('opacity-50', 'pointer-events-none');
-            this.btnPreview.classList.add('disabled', 'pointer-events-none');
-            this.btnExport.classList.add('disabled', 'pointer-events-none');
+            this.btnPreview.setAttribute('disabled', 'true');
+            this.btnPreview.classList.add('pointer-events-none');
+            this.btnExport.setAttribute('disabled', 'true');
+            this.btnExport.classList.add('pointer-events-none');
 
             // Força a pessoa a Iniciar Estúdio novamente para religar a camera
             document.getElementById('studio-start-prompt').classList.remove('opacity-0', 'pointer-events-none');
@@ -428,8 +432,10 @@ class StudioApp {
             this.btnRecSolo.innerHTML = '<div class="w-2 h-2 rounded-full bg-orange-500"></div> Solo';
 
             document.getElementById('studio-mixer').classList.add('opacity-50', 'pointer-events-none');
-            this.btnPreview.classList.add('disabled', 'pointer-events-none');
-            this.btnExport.classList.add('disabled', 'pointer-events-none');
+            this.btnPreview.setAttribute('disabled', 'true');
+            this.btnPreview.classList.add('pointer-events-none');
+            this.btnExport.setAttribute('disabled', 'true');
+            this.btnExport.classList.add('pointer-events-none');
 
             // Religar a camera para gravar o solo de novo
             this.initStudio();
