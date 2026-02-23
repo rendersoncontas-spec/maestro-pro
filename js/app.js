@@ -131,6 +131,17 @@ const NavigationModule = {
         const navBtns = document.querySelectorAll('.nav-btn');
         const themeBtn = document.getElementById('btn-theme-toggle');
 
+        // =====================================
+        // ETAPA 5: AJUSTAR ALTURA REAL DO MOBILE (PWA Safari Fix)
+        // =====================================
+        const updateViewportHeight = () => {
+            document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+        };
+        window.addEventListener('resize', updateViewportHeight);
+        window.addEventListener('orientationchange', updateViewportHeight);
+        updateViewportHeight(); // Call on init
+        // =====================================
+
         themeBtn.addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
             MaestroCore.state.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
@@ -145,21 +156,19 @@ const NavigationModule = {
 
                 navBtns.forEach(b => b.classList.remove('active'));
 
-                // Tratar estado visual do menu Extra agrupado
-                const toolsTargets = ['view-professor', 'view-eartrainer', 'view-detector', 'view-fretboard', 'view-harmony', 'view-dashboard'];
+                // Tratar estado visual da aba pai "Ferramentas" (Hub)
+                // Se estiver dentro de uma subferramenta, manter o Hub de Ferramentas aceso na barra lateral
+                const toolsTargets = ['view-tools', 'view-professor', 'view-eartrainer', 'view-detector', 'view-fretboard', 'view-harmony', 'view-dashboard'];
+
+                const sidebarHubBtn = document.querySelector('.nav-btn[data-target="view-tools"]');
                 if (toolsTargets.includes(target)) {
                     // Mantem a label do "Ferramentas" ativa
-                    document.getElementById('btn-toggle-extra').classList.add('active');
-                    // E destaca visualmente a subopção do menu dropdown
-                    btn.classList.add('text-brand', 'bg-brand/5');
+                    if (sidebarHubBtn) sidebarHubBtn.classList.add('active');
+                    // E destaca visualmente se o clique veio de dentro da propria grid
+                    btn.classList.add('active', 'border-brand');
                 } else {
-                    document.getElementById('btn-toggle-extra').classList.remove('active');
+                    if (sidebarHubBtn) sidebarHubBtn.classList.remove('active');
                     btn.classList.add('active');
-
-                    // Limpar sub-opções
-                    document.querySelectorAll('.group\\/extra .nav-btn').forEach(b => {
-                        b.classList.remove('text-brand', 'bg-brand/5');
-                    });
                 }
 
                 views.forEach(v => {
@@ -169,43 +178,14 @@ const NavigationModule = {
                 MaestroCore.state.activeView = target;
 
                 // Lifecycle Hooks (Desligar recursos de hardware para poupar CPU/Bateria ao trocar de tela)
-                if (target !== 'view-metronome' && target !== 'view-studio' && MetronomoApp.isPlaying) MetronomoApp.toggle();
                 if (target !== 'view-tuner' && AfinadorApp.isActive) AfinadorApp.stop();
                 if (target !== 'view-detector' && DetectorApp.isActive) DetectorApp.stop();
 
                 if (target === 'view-dashboard') EstatisticasApp.renderChart();
+
+                // Forçar rolagem pro topo se entrar na hub de ferramentas
+                if (target === 'view-tools') window.scrollTo({ top: 0, behavior: 'smooth' });
             });
-        });
-
-        // Controle Robusto do Menu Ferramentas (Clique para Abrir, Clique Fora para Fechar)
-        const btnExtra = document.getElementById('btn-toggle-extra');
-        const extraDropdown = document.getElementById('extra-dropdown');
-
-        btnExtra.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (extraDropdown.classList.contains('hidden')) {
-                extraDropdown.classList.remove('hidden');
-                setTimeout(() => {
-                    extraDropdown.style.opacity = '1';
-                    extraDropdown.style.transform = 'scale(1)';
-                    extraDropdown.style.pointerEvents = 'auto';
-                }, 10);
-            } else {
-                extraDropdown.style.opacity = '0';
-                extraDropdown.style.transform = 'scale(0.95)';
-                extraDropdown.style.pointerEvents = 'none';
-                setTimeout(() => extraDropdown.classList.add('hidden'), 200);
-            }
-        });
-
-        // Fechar se clicar nas opções de dentro (navegou) ou fora do menu
-        document.addEventListener('click', (e) => {
-            if (!btnExtra.contains(e.target) && !extraDropdown.classList.contains('hidden')) {
-                extraDropdown.style.opacity = '0';
-                extraDropdown.style.transform = 'scale(0.95)';
-                extraDropdown.style.pointerEvents = 'none';
-                setTimeout(() => extraDropdown.classList.add('hidden'), 200);
-            }
         });
     }
 };
@@ -217,7 +197,7 @@ const NavigationModule = {
  * ==========================================
  */
 const MetronomoApp = {
-    isPlaying: false, tempo: 120, beatsPerBar: 4, noteValue: 4, subdivision: 1,
+    isPlaying: false, tempo: 70, beatsPerBar: 4, noteValue: 4, subdivision: 1,
     currentNote: 0, currentBeat: 0, nextNoteTime: 0.0,
     lookahead: 25.0, // ms entre callbacks do scheduler
     scheduleAheadTime: 0.1, // segundos agendados no futuro

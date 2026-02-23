@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
 
     <!-- SEO & Identity -->
     <title>Maestro Pro - Estudo Musical Inteligente</title>
@@ -16,12 +20,6 @@
 
     <!-- PWA & Mobile Optimization -->
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#10b981">
-
-    <!-- Apple iOS Settings -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Violão Pro">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
 
     <!-- Styles -->
@@ -70,6 +68,24 @@
             }
         }
     </script>
+
+    <!-- Regras Anti-Gestos do PWA Mobile Pro -->
+    <style>
+        html,
+        body {
+            touch-action: manipulation;
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Fix para a barra de navegação no iPhone Safari */
+        body {
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+        }
+    </style>
 
     <!-- ==========================================
          MÓDULO: style.css (Estilos Globais)
@@ -149,9 +165,9 @@
                     <span class="text-sm font-bold text-gray-600 dark:text-gray-300">Modo Local</span>
                 </div>
 
-                <button id="btn-install-pwa"
-                    class="hidden items-center gap-2 bg-brand/10 text-brand hover:bg-brand hover:text-white px-4 py-2 rounded-full font-bold text-sm transition-colors cursor-pointer border border-brand/20">
-                    <i class="fas fa-download"></i> <span class="hidden sm:inline">Instalar App</span>
+                <button id="btnInstalarApp"
+                    class="hidden items-center gap-2 bg-brand/10 text-brand hover:bg-brand hover:text-white px-4 py-2 rounded-full font-bold text-sm transition-colors cursor-pointer border border-brand/20 shadow">
+                    <i class="fas fa-download"></i> <span class="hidden sm:inline">Baixar App</span>
                 </button>
 
                 <div class="h-8 w-px bg-gray-300 dark:bg-gray-700"></div>
@@ -202,60 +218,16 @@
                     <span class="text-[10px] font-bold mt-1 uppercase tracking-wide">Estúdio</span>
                 </button>
 
-                <!-- Menu Extra / Ferramentas em Dropdown -->
-                <div class="relative z-[60]" id="extra-menu-container">
-                    <button id="btn-toggle-extra"
-                        class="nav-btn-parent flex flex-col items-center p-3 text-gray-400 hover:text-brand dark:hover:text-brand transition-colors min-w-[70px]">
-                        <div
-                            class="w-14 h-14 rounded-2xl flex items-center justify-center bg-transparent group-[.active]:bg-brand/10 group-[.active]:text-brand transition-all group-[.active]:shadow-inner group-[.active]:scale-105">
-                            <i class="fas fa-toolbox text-2xl"></i>
-                        </div>
-                        <span class="text-[10px] font-bold mt-1 uppercase tracking-wide">Ferramentas <i
-                                class="fas fa-chevron-up text-[8px] ml-1"></i></span>
-                    </button>
-
-                    <!-- Submenu Ferramentas -->
-                    <div id="extra-dropdown"
-                        class="absolute bottom-full left-1/2 md:left-full md:bottom-auto md:top-0 -translate-x-1/2 md:translate-x-2 md:-translate-y-4 mb-2 md:mb-0 w-max bg-white dark:bg-dark-surface rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-2 flex flex-row md:flex-col gap-1 transition-all origin-bottom md:origin-left hidden opacity-0 scale-95 pointer-events-none">
-
-                        <button
-                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
-                            data-target="view-harmony">
-                            <i class="fas fa-project-diagram w-6 text-center mr-2"></i> Campo Harmônico
-                        </button>
-
-                        <button
-                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
-                            data-target="view-dashboard">
-                            <i class="fas fa-chart-pie w-6 text-center mr-2"></i> Painel Estatístico
-                        </button>
-
-                        <button
-                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
-                            data-target="view-professor">
-                            <i class="fas fa-chalkboard-teacher w-6 text-center mr-2"></i> Mentor Inteligente
-                        </button>
-
-                        <button
-                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
-                            data-target="view-eartrainer">
-                            <i class="fas fa-brain w-6 text-center mr-2"></i> Treino Auditivo
-                        </button>
-
-                        <button
-                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
-                            data-target="view-detector">
-                            <i class="fas fa-ear-listen w-6 text-center mr-2"></i> Detector Analítico
-                        </button>
-
-                        <button
-                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
-                            data-target="view-fretboard">
-                            <i class="fas fa-grip-lines w-6 text-center mr-2"></i> Braço do Violão
-                        </button>
-
+                <!-- Botão Ferramentas (Central) -->
+                <button
+                    class="nav-btn flex flex-col items-center p-3 text-gray-400 hover:text-brand dark:hover:text-brand transition-colors group min-w-[70px]"
+                    data-target="view-tools">
+                    <div
+                        class="w-14 h-14 rounded-2xl flex items-center justify-center bg-transparent group-[.active]:bg-brand/10 group-[.active]:text-brand transition-all group-[.active]:shadow-inner group-[.active]:scale-105">
+                        <i class="fas fa-toolbox text-2xl"></i>
                     </div>
-                </div>
+                    <span class="text-[10px] font-bold mt-1 uppercase tracking-wide">Ferramentas</span>
+                </button>
 
                 <button
                     class="nav-btn flex flex-col items-center p-3 text-gray-400 hover:text-brand dark:hover:text-brand transition-colors group min-w-[70px]"
@@ -271,6 +243,112 @@
 
         <!-- Container de Vistas Principais -->
         <main class="flex-1 p-4 md:p-8 pb-24 md:pb-8 relative scroll-smooth bg-gray-50/50 dark:bg-dark-bg/50">
+
+            <!-- ==========================================
+                 VIEW: HUB DE FERRAMENTAS (GRID)
+                 ========================================== -->
+            <section id="view-tools" class="view-section hidden max-w-5xl mx-auto h-full flex flex-col animate-fade-in">
+                <div class="mb-10 text-center md:text-left">
+                    <h2
+                        class="text-3xl font-black mb-3 flex items-center justify-center md:justify-start gap-3 tracking-tight">
+                        <i class="fas fa-toolbox text-brand"></i> Hub de Ferramentas
+                    </h2>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Explore todos os módulos avançados
+                        do Maestro Pro em um só lugar.</p>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-8">
+                    <!-- Campo Harmônico -->
+                    <button
+                        class="nav-btn flex flex-col items-center justify-center p-6 md:p-8 bg-white dark:bg-dark-surface rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all hover:-translate-y-1 group"
+                        data-target="view-harmony">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-brand/10 text-brand flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-project-diagram text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold tracking-tight text-gray-800 dark:text-gray-100 text-sm md:text-base">Campo
+                            Harmônico</h3>
+                        <span
+                            class="text-[10px] md:text-xs text-gray-400 mt-1 uppercase font-bold tracking-widest">Análise
+                            Tonal</span>
+                    </button>
+
+                    <!-- Mentor Inteligente -->
+                    <button
+                        class="nav-btn flex flex-col items-center justify-center p-6 md:p-8 bg-white dark:bg-dark-surface rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all hover:-translate-y-1 group"
+                        data-target="view-professor">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-chalkboard-teacher text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold tracking-tight text-gray-800 dark:text-gray-100 text-sm md:text-base">
+                            Mentor Inteligente</h3>
+                        <span
+                            class="text-[10px] md:text-xs text-gray-400 mt-1 uppercase font-bold tracking-widest">Exercícios
+                            com IA</span>
+                    </button>
+
+                    <!-- Treino Auditivo -->
+                    <button
+                        class="nav-btn flex flex-col items-center justify-center p-6 md:p-8 bg-white dark:bg-dark-surface rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all hover:-translate-y-1 group"
+                        data-target="view-eartrainer">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-brain text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold tracking-tight text-gray-800 dark:text-gray-100 text-sm md:text-base">
+                            Treino Auditivo</h3>
+                        <span
+                            class="text-[10px] md:text-xs text-gray-400 mt-1 uppercase font-bold tracking-widest">Reconhecimento
+                            Acústico</span>
+                    </button>
+
+                    <!-- Detector Analítico -->
+                    <button
+                        class="nav-btn flex flex-col items-center justify-center p-6 md:p-8 bg-white dark:bg-dark-surface rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all hover:-translate-y-1 group"
+                        data-target="view-detector">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-ear-listen text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold tracking-tight text-gray-800 dark:text-gray-100 text-sm md:text-base">
+                            Detector Analítico</h3>
+                        <span
+                            class="text-[10px] md:text-xs text-gray-400 mt-1 uppercase font-bold tracking-widest">Microfone
+                            a Escalas</span>
+                    </button>
+
+                    <!-- Braço do Violão -->
+                    <button
+                        class="nav-btn flex flex-col items-center justify-center p-6 md:p-8 bg-white dark:bg-dark-surface rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all hover:-translate-y-1 group"
+                        data-target="view-fretboard">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-amber-600/10 text-amber-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-grip-lines text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold tracking-tight text-gray-800 dark:text-gray-100 text-sm md:text-base">
+                            Fretboard Master</h3>
+                        <span
+                            class="text-[10px] md:text-xs text-gray-400 mt-1 uppercase font-bold tracking-widest">Mapeamento
+                            Visual</span>
+                    </button>
+
+                    <!-- Painel Estatístico -->
+                    <button
+                        class="nav-btn flex flex-col items-center justify-center p-6 md:p-8 bg-white dark:bg-dark-surface rounded-3xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-800 transition-all hover:-translate-y-1 group"
+                        data-target="view-dashboard">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-chart-pie text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold tracking-tight text-gray-800 dark:text-gray-100 text-sm md:text-base">
+                            Painel de Estatísticas</h3>
+                        <span class="text-[10px] md:text-xs text-gray-400 mt-1 uppercase font-bold tracking-widest">Seu
+                            Progresso Musical</span>
+                    </button>
+
+                </div>
+            </section>
 
             <!-- ==========================================
                  VIEW: METRÔNOMO PROFISSIONAL
@@ -312,7 +390,7 @@
                                         class="fas fa-minus"></i></button>
 
                                 <div class="relative group">
-                                    <input type="number" id="bpm-display" value="120"
+                                    <input type="number" id="bpm-display" value="70"
                                         class="text-8xl md:text-[140px] font-black tracking-tighter bg-transparent text-center outline-none w-64 m-0 p-0 text-gray-800 dark:text-white selection:bg-brand/30 transition-all">
                                     <div
                                         class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-brand transition-all group-hover:w-full rounded-full">
@@ -328,8 +406,7 @@
                             </div>
                         </div>
 
-                        <input type="range" id="bpm-slider" min="20" max="300" value="120"
-                            class="w-full max-w-xl mb-12">
+                        <input type="range" id="bpm-slider" min="20" max="300" value="70" class="w-full max-w-xl mb-12">
 
                         <!-- Controles Secundários -->
                         <div class="flex flex-wrap justify-center gap-4 mb-16 w-full">

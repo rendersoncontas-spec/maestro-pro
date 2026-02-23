@@ -293,3 +293,44 @@ input[type="number"] {
     border-right: 9px solid transparent;
     border-bottom: 14px solid white;
 }
+
+/* ==========================================
+   ETAPA 3: RESPONSIVIDADE PROFISSIONAL (MOBILE)
+   Garantias globais para PWA
+   ========================================== */
+@media (max-width: 768px) {
+
+    /* Garantir botões maiores (mínimo 48px altura) para toque */
+    button,
+    .nav-btn,
+    .btn-action,
+    a.button {
+        min-height: 48px;
+        min-width: 48px;
+    }
+
+    /* Espaçamento otimizado para toque */
+    input[type=range]::-webkit-slider-thumb {
+        height: 36px;
+        width: 36px;
+    }
+
+    /* Texto mínimo legível */
+    body {
+        font-size: 15px;
+        /* Evita zoom automático no iOS em inputs e melhora a leitura */
+    }
+
+    /* Garante ausência de scroll lateral */
+    html,
+    body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+
+    /* Utilitário auxiliar global (força flex column) */
+    .mobile-col {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+}

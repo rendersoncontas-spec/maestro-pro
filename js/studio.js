@@ -84,7 +84,9 @@ class StudioApp {
 
             // Layout (Horizontal vs Vertical)
             const orientation = document.getElementById('studio-video-orientation').value;
-            let videoConstraints = { facingMode: 'user' };
+
+            // Perfil Ideal
+            let videoConstraints = {};
             if (orientation === 'vertical') {
                 videoConstraints.width = { ideal: 720 };
                 videoConstraints.height = { ideal: 1280 };
@@ -93,15 +95,28 @@ class StudioApp {
                 videoConstraints.height = { ideal: 720 };
             }
 
-            // Requisito: getUserMedia com configurações de estúdio (sem processamento que afeta a música)
-            this.stream = await navigator.mediaDevices.getUserMedia({
+            const idealConstraints = {
                 video: videoConstraints,
                 audio: {
                     echoCancellation: false,
                     noiseSuppression: false,
                     autoGainControl: false
                 }
-            });
+            };
+
+            const fallbackConstraints = {
+                video: true,
+                audio: true
+            };
+
+            try {
+                // Tenta o perfil ideal de estúdio
+                this.stream = await navigator.mediaDevices.getUserMedia(idealConstraints);
+            } catch (err1) {
+                console.warn("Falha no perfil ideal de câmera/mic. Tentando modelo básico...", err1);
+                // Fallback para as configurações mínimas do navegador se a webcam não suportar a resolução da UI
+                this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+            }
 
             this.elCamera.srcObject = this.stream;
             // Libera controles
@@ -109,8 +124,17 @@ class StudioApp {
 
             MaestroCore.toast("Estúdio ativado! Use fones de ouvido.", "success");
         } catch (error) {
-            console.error("Erro ao iniciar estúdio:", error);
-            MaestroCore.toast("Permissão de câmera/mic negada ou indisponível.", "error");
+            console.error("Erro fatal ao iniciar estúdio:", error);
+
+            let errMsg = "Permissão negada ou hardware não encontrado.";
+            if (error.name === 'NotAllowedError') errMsg = "Permissão de câmera/microfone foi negada pelo navegador.";
+            if (error.name === 'NotFoundError') errMsg = "Nenhuma câmera ou microfone foi encontrado no sistema.";
+            if (error.name === 'NotReadableError') errMsg = "A câmera já está em uso por outro aplicativo (ex: Zoom, OBS).";
+
+            MaestroCore.toast(`Erro: ${errMsg} (${error.name})`, "error");
+
+            // Mostra o prompt de novo se falhar
+            document.getElementById('studio-start-prompt').classList.remove('opacity-0', 'pointer-events-none');
         }
     }
 
@@ -258,7 +282,11 @@ class StudioApp {
     // ==========================================
 
     async previewMix() {
-        if (!this.baseBlob || !this.soloBlob) return;
+        if (!this.baseBlob || !this.soloBlob) {
+            MaestroCore.toast("Grave as duas faixas antes de gerar a mixagem.", "error");
+            return;
+        }
+
         this.state = 'mixing';
 
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -272,71 +300,69 @@ class StudioApp {
         this.btnPreview.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
         this.btnPreview.classList.add('opacity-75', 'pointer-events-none');
 
-        // Em vez de buffers offline que causam timeout no iOS, vamos usar MediaElementSource clássico
-        // mas com a segurança de que a câmera já está desligada e não bloqueia o IO.
-        this.previewBaseElement = new Audio(URL.createObjectURL(this.baseBlob));
-        this.previewSoloElement = new Audio(URL.createObjectURL(this.soloBlob));
-
-        // Permitir caching
-        this.previewBaseElement.preload = "auto";
-        this.previewSoloElement.preload = "auto";
-
         try {
+            // Decodificar blobs em AudioBuffers nativos
+            const baseBuffer = await this.getAudioBuffer(this.mixAudioCtx, this.baseBlob);
+            const soloBuffer = await this.getAudioBuffer(this.mixAudioCtx, this.soloBlob);
+
             this.previewGainBase = this.mixAudioCtx.createGain();
             this.previewGainSolo = this.mixAudioCtx.createGain();
 
-            const track1 = this.mixAudioCtx.createMediaElementSource(this.previewBaseElement);
-            track1.connect(this.previewGainBase).connect(this.mixAudioCtx.destination);
+            this.previewBaseSource = this.mixAudioCtx.createBufferSource();
+            this.previewBaseSource.buffer = baseBuffer;
+            this.previewBaseSource.connect(this.previewGainBase).connect(this.mixAudioCtx.destination);
 
-            const track2 = this.mixAudioCtx.createMediaElementSource(this.previewSoloElement);
-            track2.connect(this.previewGainSolo).connect(this.mixAudioCtx.destination);
+            this.previewSoloSource = this.mixAudioCtx.createBufferSource();
+            this.previewSoloSource.buffer = soloBuffer;
+            this.previewSoloSource.connect(this.previewGainSolo).connect(this.mixAudioCtx.destination);
+
+            const updateVols = () => {
+                if (this.previewGainBase && this.previewGainBase.gain) {
+                    this.previewGainBase.gain.value = document.getElementById('vol-base').value;
+                }
+                if (this.previewGainSolo && this.previewGainSolo.gain) {
+                    this.previewGainSolo.gain.value = document.getElementById('vol-solo').value;
+                }
+            };
+            updateVols();
+
+            document.getElementById('vol-base').addEventListener('input', updateVols);
+            document.getElementById('vol-solo').addEventListener('input', updateVols);
+
+            // Visual: Exibir o vídeo do solo mutado em sincronia
+            this.elBase.src = URL.createObjectURL(this.soloBlob);
+            this.elBase.muted = true;
+            this.elBase.currentTime = 0;
+            this.elBase.play().catch(e => console.warn("Video play prevented: ", e));
+
+            this.elBase.style.display = 'block';
+            this.elCamera.style.display = 'none';
+
+            // Iniciar sincronamente os buffers
+            this.previewBaseSource.start(0);
+            this.previewSoloSource.start(0);
+            this.isPlayingPreview = true;
+
+            const maxDuration = Math.max(baseBuffer.duration, soloBuffer.duration) * 1000;
+
+            // Auto stop quando terminar
+            this.previewTimeout = setTimeout(() => {
+                if (this.isPlayingPreview) {
+                    this.stopPreviewPlayback();
+                    this.btnPreview.innerHTML = '<i class="fas fa-play"></i> Ouvir Mixagem';
+                    this.btnPreview.classList.replace('text-red-500', 'text-gray-500');
+                }
+            }, maxDuration + 100);
+
         } catch (e) {
-            console.warn("Safari HTMLMediaElement compat fallback");
+            console.error("Erro no previewMix:", e);
+            MaestroCore.toast("Erro ao processar as faixas para reprodução.", "error");
+            this.stopPreviewPlayback();
         }
 
         this.btnPreview.classList.remove('opacity-75', 'pointer-events-none');
         this.btnPreview.innerHTML = '<i class="fas fa-stop"></i> Parar Preview';
         this.btnPreview.classList.replace('text-gray-500', 'text-red-500');
-
-        this.previewGainBase = this.mixAudioCtx.createGain();
-        this.previewGainSolo = this.mixAudioCtx.createGain();
-
-        const updateVols = () => {
-            if (this.previewGainBase && this.previewGainBase.gain) {
-                this.previewGainBase.gain.value = document.getElementById('vol-base').value;
-            }
-            if (this.previewGainSolo && this.previewGainSolo.gain) {
-                this.previewGainSolo.gain.value = document.getElementById('vol-solo').value;
-            }
-        };
-        updateVols();
-
-        document.getElementById('vol-base').addEventListener('input', updateVols);
-        document.getElementById('vol-solo').addEventListener('input', updateVols);
-
-        // Visual
-        this.elBase.src = URL.createObjectURL(this.soloBlob);
-        this.elBase.muted = true;
-        this.elBase.currentTime = 0;
-        this.elBase.play().catch(e => console.warn("Video play prevented"));
-
-        this.elBase.style.display = 'block';
-        this.elCamera.style.display = 'none';
-
-        try {
-            this.previewBaseElement.play();
-            this.previewSoloElement.play();
-        } catch (e) { console.warn(e); }
-
-        this.isPlayingPreview = true;
-
-        this.previewBaseElement.onended = () => {
-            if (this.isPlayingPreview) {
-                this.stopPreviewPlayback();
-                this.btnPreview.innerHTML = '<i class="fas fa-play"></i> Ouvir Mixagem';
-                this.btnPreview.classList.replace('text-red-500', 'text-gray-500');
-            }
-        };
     }
 
     async togglePreview() {
@@ -350,19 +376,32 @@ class StudioApp {
     }
 
     stopPreviewPlayback() {
-        if (this.previewBaseElement) {
-            this.previewBaseElement.pause();
-            this.previewBaseElement.currentTime = 0;
+        this.isPlayingPreview = false;
+        if (this.previewTimeout) clearTimeout(this.previewTimeout);
+
+        if (this.previewBaseSource) {
+            try { this.previewBaseSource.stop(); } catch (e) { }
+            this.previewBaseSource.disconnect();
+            this.previewBaseSource = null;
         }
-        if (this.previewSoloElement) {
-            this.previewSoloElement.pause();
-            this.previewSoloElement.currentTime = 0;
+        if (this.previewSoloSource) {
+            try { this.previewSoloSource.stop(); } catch (e) { }
+            this.previewSoloSource.disconnect();
+            this.previewSoloSource = null;
+        }
+
+        if (this.previewGainBase) {
+            this.previewGainBase.disconnect();
+            this.previewGainBase = null;
+        }
+        if (this.previewGainSolo) {
+            this.previewGainSolo.disconnect();
+            this.previewGainSolo = null;
         }
         if (this.elBase) this.elBase.pause();
         if (this.mixAudioCtx && this.mixAudioCtx.state === 'running') {
             this.mixAudioCtx.suspend();
         }
-        this.isPlayingPreview = false;
     }
 
     trashTrack(type) {
@@ -410,7 +449,10 @@ class StudioApp {
     }
 
     async exportFinal() {
-        if (!this.baseBlob || !this.soloBlob) return;
+        if (!this.baseBlob || !this.soloBlob) {
+            MaestroCore.toast("Grave as duas faixas antes de gerar a mixagem final.", "error");
+            return;
+        }
 
         this.btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Mixagem...';
         this.btnExport.classList.add('opacity-75', 'pointer-events-none');

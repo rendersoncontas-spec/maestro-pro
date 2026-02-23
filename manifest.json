@@ -1,31 +1,25 @@
 {
-  "id": "/maestro-pro/",
-  "name": "Meu Professor de Violão",
-  "short_name": "Violão Pro",
-  "description": "O Maestro Pro é uma ferramenta completa para músicos que desejam evoluir no ritmo, afinação e conhecimento do braço do violão. Acompanhe seus estudos em um aplicativo sem anúncios e super responsivo.",
-  "start_url": "./",
-  "scope": "./",
+  "name": "Maestro Pro",
+  "short_name": "Maestro",
+  "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#0f172a",
-  "theme_color": "#10b981",
-  "categories": [
-    "music",
-    "education"
-  ],
-  "display_override": [
-    "window-controls-overlay",
-    "standalone"
-  ],
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "./icons/icon-192.png",
+      "src": "favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icons/icon-512.png",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

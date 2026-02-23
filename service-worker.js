@@ -1,37 +1,44 @@
-const CACHE_NAME = 'maestro-pro-v2-local';
-const ASSETS_TO_CACHE = [
-    './',
-    './index.html',
-    './manifest.json',
-    './css/style.css',
-    './js/app.js',
-    './js/professor.js',
-    './js/pwa.js',
-    './icons/icon-192.png',
-    './icons/icon-512.png',
+const CACHE_NAME = 'maestro-pro-v1';
+const ASSETS = [
+    '/',
+    '/index.html',
+    '/css/style.css',
+    '/js/app.js',
+    '/js/core.js',
+    '/js/piano.js',
+    '/js/chords.js',
+    '/js/professor.js',
+    '/js/studio.js',
+    '/js/pwa.js',
     'https://cdn.tailwindcss.com',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
+// Install Event - Pre-cache minimal assets for offline readiness
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            console.log('Cache aberto', CACHE_NAME);
-            return cache.addAll(ASSETS_TO_CACHE);
-        })
+        caches.open(CACHE_NAME)
+            .then((cache) => {
+                console.log('[SW] Opened cache');
+                // Use addAll com catch para não falhar a instalação inteira se um link CDN falhar
+                return Promise.allSettled(
+                    ASSETS.map(url => cache.add(url).catch(err => console.warn('[SW] Falha ao parear cache para', url, err)))
+                );
+            })
+            .then(() => self.skipWaiting())
     );
 });
 
+// Activate Event - Clean up old caches
 self.addEventListener('activate', (event) => {
+    const cacheWhiteList = [CACHE_NAME];
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.map((cache) => {
-                    if (cache !== CACHE_NAME) {
-                        console.log('Limpando cache antigo:', cache);
-                        return caches.delete(cache);
+                cacheNames.map((cacheName) => {
+                    if (cacheWhiteList.indexOf(cacheName) === -1) {
+                        return caches.delete(cacheName);
                     }
                 })
             );
@@ -39,39 +46,14 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Estratégia Cache-First (Offline Absoluto)
+// Fetch Event - Network First Strategy (Para garantir a versão mais nova sempre, já que é PWA focada em uso local)
 self.addEventListener('fetch', (event) => {
-    if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
+    // Only handle GET requests
+    if (event.request.method !== 'GET') return;
 
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            // Se encontrou no cache, retorna imediatamente (Rápido e Offline)
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-
-            // Se não encontrou, busca na rede
-            return fetch(event.request).then((networkResponse) => {
-                // Verifica se recebemos uma resposta válida
-                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-                    if (event.request.url.includes('tailwind') || event.request.url.includes('font-awesome')) {
-                        // Respostas opacas de CDNs
-                        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
-                    }
-                    return networkResponse;
-                }
-
-                // Clona a resposta e guarda no cache para o futuro
-                const responseToCache = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseToCache);
-                });
-
-                return networkResponse;
-            }).catch(() => {
-                // Falha de rede catastrófica (offline sem cache)
-                console.warn('(Offline Offline fallback) Fetch failed for: ', event.request.url);
-            });
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
         })
     );
 });
