@@ -298,6 +298,62 @@ input[type="number"] {
    ETAPA 3: RESPONSIVIDADE PROFISSIONAL (MOBILE)
    Garantias globais para PWA
    ========================================== */
+/* DAW Timeline Customizations */
+.daw-timeline {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    position: relative;
+    height: 36px !important;
+    border-radius: 6px;
+    background-color: #1e293b !important;
+    background-image: repeating-linear-gradient(to right,
+            #475569,
+            #475569 1px,
+            transparent 1px,
+            transparent 5%) !important;
+    background-position: left bottom !important;
+    background-size: 100% 30% !important;
+    background-repeat: no-repeat !important;
+    border: 1px solid #334155 !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    overflow: hidden;
+    /* Mantém focus limpo dentro do border-radius */
+}
+
+.daw-timeline::-webkit-slider-runnable-track {
+    background: transparent !important;
+    height: 36px;
+}
+
+.daw-timeline::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px !important;
+    height: 36px !important;
+    background: #10b981 !important;
+    border-radius: 3px !important;
+    border: 1px solid #ffffff !important;
+    margin-top: 0 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
+    cursor: ew-resize !important;
+    position: relative;
+    z-index: 10;
+}
+
+.daw-timeline:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #111827 !important;
+}
+
+.daw-timeline:disabled::-webkit-slider-thumb {
+    background: #475569 !important;
+    box-shadow: none !important;
+    border-color: #94a3b8 !important;
+    cursor: not-allowed !important;
+}
+
 @media (max-width: 768px) {
 
     /* Garantir botões maiores (mínimo 48px altura) para toque */
