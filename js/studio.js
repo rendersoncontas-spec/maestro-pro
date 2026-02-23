@@ -545,19 +545,21 @@ class StudioApp {
             await ctx.resume();
 
             const dest = ctx.createMediaStreamDestination();
+            const mixBus = ctx.createGain(); // Bus central
+            mixBus.connect(dest); // -> recorder
 
-            // Roteamento: video element -> Web Audio -> recorder destination
+            // Roteamento: video element -> Web Audio -> mixer bus -> recorder
             const srcA = ctx.createMediaElementSource(vBase);
             const gainA = ctx.createGain(); gainA.gain.value = 1;
-            srcA.connect(gainA).connect(dest);
+            srcA.connect(gainA).connect(mixBus);
 
             const srcB = ctx.createMediaElementSource(vSolo);
             const gainB = ctx.createGain(); gainB.gain.value = 1;
-            srcB.connect(gainB).connect(dest);
+            srcB.connect(gainB).connect(mixBus);
 
-            // Manter o clock vivo ligando a ctx.destination em volume 0
+            // Manter o clock vivo ligando ao ctx.destination em volume 0 (via mixBus, que tem saida)
             const silent = ctx.createGain(); silent.gain.value = 0;
-            dest.connect(silent).connect(ctx.destination);
+            mixBus.connect(silent).connect(ctx.destination);
 
             // Escolher formato de audio suportado
             const audioTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/mp4'];
@@ -578,8 +580,8 @@ class StudioApp {
             // Iniciar gravacao e reproducao sincronizada
             vBase.currentTime = 0; vSolo.currentTime = 0;
             await Promise.all([
-                vBase.play().catch(() => {}),
-                vSolo.play().catch(() => {})
+                vBase.play().catch(() => { }),
+                vSolo.play().catch(() => { })
             ]);
             recorder.start(300);
 
