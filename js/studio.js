@@ -534,13 +534,12 @@ class StudioApp {
             vBase.src = URL.createObjectURL(this.baseBlob);
             vSolo.src = URL.createObjectURL(this.soloBlob);
 
-            // 2. Aguardar carregamento (com timeout de segurança para evitar travamento infinito)
+            // 2. Aguardar carregamento (Simples e Direto)
             const syncPromise = (vid) => new Promise((resolve) => {
-                let resolved = false;
-                const finish = () => { if (!resolved) { resolved = true; resolve(); } };
-                vid.onloadedmetadata = () => { vid.oncanplaythrough = finish; vid.load(); };
-                vid.onerror = finish;
-                setTimeout(finish, 2500); // 2.5s Limite Máximo de espera
+                if (vid.readyState >= 3) return resolve(); // Já carregado
+                vid.oncanplay = resolve;
+                vid.onerror = resolve;
+                setTimeout(resolve, 3000);
             });
             await Promise.all([syncPromise(vBase), syncPromise(vSolo)]);
 
@@ -641,9 +640,15 @@ class StudioApp {
                 this.renderLoopId = requestAnimationFrame(renderLoop);
             };
 
-            // INICIO SINCRONIZADO
+            // INICIO SINCRONIZADO (Mais robusto para evitar interrupção por load)
             vBase.currentTime = 0; vSolo.currentTime = 0;
-            await vBase.play(); await vSolo.play();
+            vBase.muted = true; vSolo.muted = true;
+            try {
+                await Promise.all([
+                    vBase.play().catch(() => { }),
+                    vSolo.play().catch(() => { })
+                ]);
+            } catch (e) { }
 
             this.renderLoopId = requestAnimationFrame(renderLoop);
 
