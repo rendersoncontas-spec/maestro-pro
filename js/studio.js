@@ -517,43 +517,89 @@ class StudioApp {
 
         this.btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Mixagem...';
         this.btnExport.classList.add('opacity-75', 'pointer-events-none');
-        MaestroCore.toast('Processando audio... aguarde.', 'info');
+        MaestroCore.toast('Iniciando mixagem de audio...', 'info');
 
         try {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            const decodeCtx = new AudioContextClass();
+            // Criar videos offscreen com os blobs gravados
+            const vBase = document.createElement('video');
+            const vSolo = document.createElement('video');
+            vBase.src = URL.createObjectURL(this.baseBlob);
+            vSolo.src = URL.createObjectURL(this.soloBlob);
+            vBase.playsInline = true;
+            vSolo.playsInline = true;
 
-            const decodeBlob = async (blob) => {
-                const arrayBuf = await blob.arrayBuffer();
-                return decodeCtx.decodeAudioData(arrayBuf);
-            };
+            // Precisam estar no DOM para Android liberar o audio
+            const hide = el => { el.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px'; };
+            hide(vBase); hide(vSolo);
+            document.body.appendChild(vBase);
+            document.body.appendChild(vSolo);
 
-            const [bufBase, bufSolo] = await Promise.all([
-                decodeBlob(this.baseBlob),
-                decodeBlob(this.soloBlob)
+            // Aguardar metadados
+            await Promise.all([
+                new Promise(r => { vBase.onloadedmetadata = r; vBase.onerror = r; setTimeout(r, 3000); }),
+                new Promise(r => { vSolo.onloadedmetadata = r; vSolo.onerror = r; setTimeout(r, 3000); })
             ]);
-            await decodeCtx.close();
 
-            const sampleRate = bufBase.sampleRate || 44100;
-            const length = Math.min(bufBase.length, bufSolo.length);
-            const channels = Math.max(bufBase.numberOfChannels, bufSolo.numberOfChannels);
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioCtx();
+            await ctx.resume();
 
-            const offlineCtx = new OfflineAudioContext(channels, length, sampleRate);
+            const dest = ctx.createMediaStreamDestination();
 
-            const s1 = offlineCtx.createBufferSource();
-            s1.buffer = bufBase;
-            s1.connect(offlineCtx.destination);
-            s1.start(0);
+            // Roteamento: video element -> Web Audio -> recorder destination
+            const srcA = ctx.createMediaElementSource(vBase);
+            const gainA = ctx.createGain(); gainA.gain.value = 1;
+            srcA.connect(gainA).connect(dest);
 
-            const s2 = offlineCtx.createBufferSource();
-            s2.buffer = bufSolo;
-            s2.connect(offlineCtx.destination);
-            s2.start(0);
+            const srcB = ctx.createMediaElementSource(vSolo);
+            const gainB = ctx.createGain(); gainB.gain.value = 1;
+            srcB.connect(gainB).connect(dest);
 
-            const rendered = await offlineCtx.startRendering();
-            const wavBlob = this.encodeWav(rendered);
-            const url = URL.createObjectURL(wavBlob);
-            const fileName = 'MaestroPro_Mix_' + Date.now() + '.wav';
+            // Manter o clock vivo ligando a ctx.destination em volume 0
+            const silent = ctx.createGain(); silent.gain.value = 0;
+            dest.connect(silent).connect(ctx.destination);
+
+            // Escolher formato de audio suportado
+            const audioTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/mp4'];
+            let mimeType = '';
+            for (const t of audioTypes) {
+                if (MediaRecorder.isTypeSupported(t)) { mimeType = t; break; }
+            }
+
+            const recorder = mimeType
+                ? new MediaRecorder(dest.stream, { mimeType })
+                : new MediaRecorder(dest.stream);
+
+            const chunks = [];
+            recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+            const duration = Math.min(this.baseDuration || 30, this.soloDuration || 30) * 1000;
+
+            // Iniciar gravacao e reproducao sincronizada
+            vBase.currentTime = 0; vSolo.currentTime = 0;
+            await Promise.all([
+                vBase.play().catch(() => {}),
+                vSolo.play().catch(() => {})
+            ]);
+            recorder.start(300);
+
+            await new Promise(resolve => setTimeout(resolve, duration + 500));
+
+            recorder.stop();
+            vBase.pause(); vSolo.pause();
+            await ctx.close();
+
+            // Montar Blob final e baixar
+            await new Promise(resolve => { recorder.onstop = resolve; });
+
+            const finalBlob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' });
+            const ext = (recorder.mimeType || mimeType || '').includes('mp4') ? 'm4a' : 'webm';
+            const url = URL.createObjectURL(finalBlob);
+            const fileName = 'MaestroPro_Mix_' + Date.now() + '.' + ext;
+
+            // Limpar DOM
+            document.body.removeChild(vBase);
+            document.body.removeChild(vSolo);
 
             const a = document.createElement('a');
             a.href = url;
@@ -565,46 +611,14 @@ class StudioApp {
             this.btnExport.innerHTML = '<i class="fas fa-check"></i> Mixagem Baixada!';
             this.btnExport.classList.remove('opacity-75', 'pointer-events-none', 'bg-purple-600', 'hover:bg-purple-700');
             this.btnExport.classList.add('bg-green-600', 'hover:bg-green-700');
-            MaestroCore.toast('Arquivo salvo! Verifique seus downloads.', 'success');
+            MaestroCore.toast('Mixagem salva nos downloads!', 'success');
 
         } catch (error) {
-            console.error('Studio render error:', error);
-            MaestroCore.toast('Falha: ' + error.message, 'error');
+            console.error('Studio export error:', error);
+            MaestroCore.toast('Falha na exportacao: ' + error.message, 'error');
             this.btnExport.innerHTML = '<i class="fas fa-file-export"></i> Gerar Versao Final';
             this.btnExport.classList.remove('opacity-75', 'pointer-events-none');
         }
-    }
-
-    encodeWav(buffer) {
-        const numChannels = buffer.numberOfChannels;
-        const sampleRate = buffer.sampleRate;
-        const numSamples = buffer.length;
-        const dataSize = numSamples * numChannels * 2;
-        const ab = new ArrayBuffer(44 + dataSize);
-        const view = new DataView(ab);
-        const writeStr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
-        writeStr(0, 'RIFF');
-        view.setUint32(4, 36 + dataSize, true);
-        writeStr(8, 'WAVE');
-        writeStr(12, 'fmt ');
-        view.setUint32(16, 16, true);
-        view.setUint16(20, 1, true);
-        view.setUint16(22, numChannels, true);
-        view.setUint32(24, sampleRate, true);
-        view.setUint32(28, sampleRate * numChannels * 2, true);
-        view.setUint16(32, numChannels * 2, true);
-        view.setUint16(34, 16, true);
-        writeStr(36, 'data');
-        view.setUint32(40, dataSize, true);
-        let offset = 44;
-        for (let i = 0; i < numSamples; i++) {
-            for (let ch = 0; ch < numChannels; ch++) {
-                const s = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
-                view.setInt16(offset, s < 0 ? s * 32768 : s * 32767, true);
-                offset += 2;
-            }
-        }
-        return new Blob([ab], { type: 'audio/wav' });
     }
 }
 
