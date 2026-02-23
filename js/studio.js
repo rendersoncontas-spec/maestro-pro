@@ -368,15 +368,6 @@ class StudioApp {
             this.previewVideoBase.src = URL.createObjectURL(this.baseBlob);
             this.previewVideoSolo.src = URL.createObjectURL(this.soloBlob);
 
-            // Volume Controllers
-            const updateVols = () => {
-                if (this.previewVideoBase) this.previewVideoBase.volume = parseFloat(document.getElementById('vol-base').value);
-                if (this.previewVideoSolo) this.previewVideoSolo.volume = parseFloat(document.getElementById('vol-solo').value);
-            };
-            updateVols();
-            document.getElementById('vol-base').addEventListener('input', updateVols);
-            document.getElementById('vol-solo').addEventListener('input', updateVols);
-
             // Sincronização via Promises (canplaythrough garantido)
             const syncPromise = (vid) => new Promise(resolve => {
                 vid.oncanplaythrough = resolve;
