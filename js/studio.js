@@ -563,22 +563,24 @@ class StudioApp {
             const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Otimização Safari
 
             const audioDest = renderCtx.createMediaStreamDestination();
+            const mixerBus = renderCtx.createGain();
+            mixerBus.connect(audioDest);
 
-            // Roteamento: Video -> AudioContext -> Gain -> Destination
+            // Roteamento: Video -> AudioContext -> Gain -> Mixer -> Destination
             const srcBase = renderCtx.createMediaElementSource(vBase);
             const gainBase = renderCtx.createGain();
             gainBase.gain.value = 1;
-            srcBase.connect(gainBase).connect(audioDest);
+            srcBase.connect(gainBase).connect(mixerBus);
 
             const srcSolo = renderCtx.createMediaElementSource(vSolo);
             const gainSolo = renderCtx.createGain();
             gainSolo.gain.value = 1;
-            srcSolo.connect(gainSolo).connect(audioDest);
+            srcSolo.connect(gainSolo).connect(mixerBus);
 
             // IMPORTANTE: Em alguns celulares o AudioContext "pausa" se não estiver ligado aos falantes
             const masterSilence = renderCtx.createGain();
             masterSilence.gain.value = 0;
-            audioDest.connect(masterSilence).connect(renderCtx.destination);
+            mixerBus.connect(masterSilence).connect(renderCtx.destination);
 
             // 5. Capturar Stream Combinada
             let videoStream;
