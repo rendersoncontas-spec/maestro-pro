@@ -544,6 +544,12 @@ class StudioApp {
             });
             await Promise.all([syncPromise(vBase), syncPromise(vSolo)]);
 
+            // Garantir que os vídeos estão no DOM para o AudioContext (Necessário em alguns mobile)
+            vBase.style.position = 'fixed'; vBase.style.left = '-9999px'; vBase.style.top = '0';
+            vSolo.style.position = 'fixed'; vSolo.style.left = '-9999px'; vSolo.style.top = '0';
+            document.body.appendChild(vBase);
+            document.body.appendChild(vSolo);
+
             // 3. Preparar o Canvas (Lado a Lado)
             // Se o navegador não conseguiu ler a resolução (0x0), forçamos uma proporção para não criar canvas invisível
             const wBase = vBase.videoWidth || 640;
@@ -626,16 +632,17 @@ class StudioApp {
 
                 // Cleanup Offscreen elements
                 vBase.src = ""; vSolo.src = "";
+                if (vBase.parentNode) vBase.parentNode.removeChild(vBase);
+                if (vSolo.parentNode) vSolo.parentNode.removeChild(vSolo);
                 MaestroCore.toast("Renderização concluída! Clique no botão verde.", "success");
             };
 
             // 6. Loop de Renderização (DrawImage)
             const renderLoop = () => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // Desenhar base na esquerda
-                ctx.drawImage(vBase, 0, 0, vBase.videoWidth, vBase.videoHeight);
-                // Desenhar solo na direita
-                ctx.drawImage(vSolo, vBase.videoWidth, 0, vSolo.videoWidth, vSolo.videoHeight);
+                // Usar as dimensões calculadas wBase/hBase para evitar desenho de 0x0
+                ctx.drawImage(vBase, 0, 0, wBase, hBase);
+                ctx.drawImage(vSolo, wBase, 0, wSolo, hSolo);
                 this.renderLoopId = requestAnimationFrame(renderLoop);
             };
 
