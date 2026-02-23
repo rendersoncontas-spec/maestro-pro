@@ -567,15 +567,18 @@ class StudioApp {
             // Roteamento: Video -> AudioContext -> Gain -> Destination
             const srcBase = renderCtx.createMediaElementSource(vBase);
             const gainBase = renderCtx.createGain();
-            const volBaseNode = document.getElementById('vol-base');
-            gainBase.gain.value = volBaseNode ? parseFloat(volBaseNode.value || 1) : 1;
+            gainBase.gain.value = 1;
             srcBase.connect(gainBase).connect(audioDest);
 
             const srcSolo = renderCtx.createMediaElementSource(vSolo);
             const gainSolo = renderCtx.createGain();
-            const volSoloNode = document.getElementById('vol-solo');
-            gainSolo.gain.value = volSoloNode ? parseFloat(volSoloNode.value || 1) : 1;
+            gainSolo.gain.value = 1;
             srcSolo.connect(gainSolo).connect(audioDest);
+
+            // IMPORTANTE: Em alguns celulares o AudioContext "pausa" se não estiver ligado aos falantes
+            const masterSilence = renderCtx.createGain();
+            masterSilence.gain.value = 0;
+            audioDest.connect(masterSilence).connect(renderCtx.destination);
 
             // 5. Capturar Stream Combinada
             let videoStream;
@@ -589,24 +592,14 @@ class StudioApp {
                 videoStream = audioDest.stream; // Fallback extremo
             }
 
-            // Descobrir melhor MimeType suportado garantindo arquivos portáteis
-            let mimeType = 'video/mp4';
-            if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
-                mimeType = 'video/webm;codecs=vp8,opus';
-            } else if (MediaRecorder.isTypeSupported('video/webm')) {
-                mimeType = 'video/webm';
+            // Descobrir melhor MimeType suportado
+            const types = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+            let mimeType = 'video/webm';
+            for (const t of types) {
+                if (MediaRecorder.isTypeSupported(t)) { mimeType = t; break; }
             }
 
-            let recorder;
-            try {
-                recorder = new MediaRecorder(videoStream, { mimeType, videoBitsPerSecond: 3000000 });
-            } catch (e) {
-                try {
-                    recorder = new MediaRecorder(videoStream, { mimeType: 'video/mp4' });
-                } catch (e2) {
-                    recorder = new MediaRecorder(videoStream); // Fallback absoluto
-                }
-            }
+            const recorder = new MediaRecorder(videoStream, { mimeType, videoBitsPerSecond: 4000000 });
 
             let finalChunks = [];
             recorder.ondataavailable = e => {
@@ -623,7 +616,7 @@ class StudioApp {
                 let ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
                 if (/iPad|iPhone|iPod/.test(navigator.userAgent)) ext = 'mp4';
 
-                const fileName = `MaestroPro_VideoMix_${Date.now()}.${ext}`;
+                const fileName = `MaestroPro_Studio_${Date.now()}.${ext}`;
 
                 this.btnExport.innerHTML = `<a href="${url}" download="${fileName}" class="w-full h-full flex items-center justify-center gap-2"><i class="fas fa-download"></i> Baixar Vídeo Final</a>`;
                 this.btnExport.classList.remove('opacity-75', 'pointer-events-none');
@@ -646,28 +639,25 @@ class StudioApp {
                 this.renderLoopId = requestAnimationFrame(renderLoop);
             };
 
-            // Força reset de currentTime e PLAY explícito ANTES de capturar stream 
-            // (Crucial para iOS/Android não congelarem a Canvas)
+            // INICIO SINCRONIZADO
             vBase.currentTime = 0; vSolo.currentTime = 0;
-            vBase.play().catch(e => console.warn("Erro ao forçar play offscreen", e));
-            vSolo.play().catch(e => console.warn("Erro ao forçar play offscreen", e));
+            await vBase.play(); await vSolo.play();
 
-            // Iniciar o Processo em Sincronia Rígida
             this.renderLoopId = requestAnimationFrame(renderLoop);
 
-            // Requer chunking regular para garantir envio de dados ao Blob em Androids Problemáticos
-            recorder.start(500);
+            // Aguarda 500ms de "warm up" para o encoder de vídeo não engasgar no primeiro frame
+            setTimeout(() => {
+                recorder.start(200);
+            }, 500);
 
-            // 7. Controle de Duração (Menor Tempo Manda)
             const minDurationMs = Math.min((this.baseDuration || 0), (this.soloDuration || 0)) * 1000;
-            const fallbackDurationMs = Math.min(vBase.duration, vSolo.duration) * 1000 || 5000;
-            const targetDuration = minDurationMs > 0 ? minDurationMs : fallbackDurationMs;
+            const targetDuration = minDurationMs > 0 ? minDurationMs : 5000;
 
             setTimeout(() => {
                 if (recorder.state !== 'inactive') recorder.stop();
                 vBase.pause(); vSolo.pause();
                 renderCtx.close();
-            }, targetDuration + 100);
+            }, targetDuration + 700);
 
         } catch (error) {
             console.error("Studio render error:", error);
