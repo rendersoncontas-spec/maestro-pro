@@ -515,111 +515,144 @@ class StudioApp {
             return;
         }
 
-        this.btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Mixagem...';
+        this.btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Renderizando...';
         this.btnExport.classList.add('opacity-75', 'pointer-events-none');
-        MaestroCore.toast('Iniciando mixagem de audio...', 'info');
+        MaestroCore.toast('Gerando video lado a lado... aguarde.', 'info');
+
+        // Elementos que precisam de limpeza depois
+        let vBase = null, vSolo = null, canvas = null;
+        let renderLoopId = null, recorder = null, audioCtx = null;
 
         try {
-            // Criar videos offscreen com os blobs gravados
-            const vBase = document.createElement('video');
-            const vSolo = document.createElement('video');
+            // 1. Criar e ancorar videos no DOM (Android exige para liberar captureStream)
+            vBase = document.createElement('video');
+            vSolo = document.createElement('video');
+            const offStyle = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;';
+            vBase.style.cssText = offStyle; vSolo.style.cssText = offStyle;
+            vBase.playsInline = true; vSolo.playsInline = true;
             vBase.src = URL.createObjectURL(this.baseBlob);
             vSolo.src = URL.createObjectURL(this.soloBlob);
-            vBase.playsInline = true;
-            vSolo.playsInline = true;
-
-            // Precisam estar no DOM para Android liberar o audio
-            const hide = el => { el.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px'; };
-            hide(vBase); hide(vSolo);
             document.body.appendChild(vBase);
             document.body.appendChild(vSolo);
 
-            // Aguardar metadados
+            // 2. Aguardar metadados para saber as dimensoes reais
             await Promise.all([
                 new Promise(r => { vBase.onloadedmetadata = r; vBase.onerror = r; setTimeout(r, 3000); }),
                 new Promise(r => { vSolo.onloadedmetadata = r; vSolo.onerror = r; setTimeout(r, 3000); })
             ]);
 
+            // 3. Canvas lado a lado ancorado no DOM
+            const W1 = vBase.videoWidth || 640, H1 = vBase.videoHeight || 480;
+            const W2 = vSolo.videoWidth || 640, H2 = vSolo.videoHeight || 480;
+            const H = Math.max(H1, H2);
+            canvas = document.createElement('canvas');
+            canvas.width = W1 + W2;
+            canvas.height = H;
+            canvas.style.cssText = offStyle;
+            document.body.appendChild(canvas);
+            const ctx = canvas.getContext('2d');
+            // Pre-draw para acordar o canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, H);
+
+            // 4. Web Audio Context - Audio Routing
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            const ctx = new AudioCtx();
-            await ctx.resume();
+            audioCtx = new AudioCtx();
+            await audioCtx.resume();
 
-            const dest = ctx.createMediaStreamDestination();
-            const mixBus = ctx.createGain(); // Bus central
-            mixBus.connect(dest); // -> recorder
+            const dest = audioCtx.createMediaStreamDestination();
+            const mixBus = audioCtx.createGain();
+            mixBus.connect(dest);
 
-            // Roteamento: video element -> Web Audio -> mixer bus -> recorder
-            const srcA = ctx.createMediaElementSource(vBase);
-            const gainA = ctx.createGain(); gainA.gain.value = 1;
+            const srcA = audioCtx.createMediaElementSource(vBase);
+            const gainA = audioCtx.createGain(); gainA.gain.value = 1;
             srcA.connect(gainA).connect(mixBus);
 
-            const srcB = ctx.createMediaElementSource(vSolo);
-            const gainB = ctx.createGain(); gainB.gain.value = 1;
+            const srcB = audioCtx.createMediaElementSource(vSolo);
+            const gainB = audioCtx.createGain(); gainB.gain.value = 1;
             srcB.connect(gainB).connect(mixBus);
 
-            // Manter o clock vivo ligando ao ctx.destination em volume 0 (via mixBus, que tem saida)
-            const silent = ctx.createGain(); silent.gain.value = 0;
-            mixBus.connect(silent).connect(ctx.destination);
+            // Manter clock vivo (conectar ao dest fisico em volume 0)
+            const silent = audioCtx.createGain(); silent.gain.value = 0;
+            mixBus.connect(silent).connect(audioCtx.destination);
 
-            // Escolher formato de audio suportado
-            const audioTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/mp4'];
+            // 5. Capturar canvas (video) + audio
+            const canvasStream = canvas.captureStream(30);
+            const audioTrack = dest.stream.getAudioTracks()[0];
+            if (audioTrack) canvasStream.addTrack(audioTrack);
+
+            // 6. Configurar MediaRecorder (video+audio)
+            const types = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
             let mimeType = '';
-            for (const t of audioTypes) {
+            for (const t of types) {
                 if (MediaRecorder.isTypeSupported(t)) { mimeType = t; break; }
             }
-
-            const recorder = mimeType
-                ? new MediaRecorder(dest.stream, { mimeType })
-                : new MediaRecorder(dest.stream);
+            recorder = mimeType
+                ? new MediaRecorder(canvasStream, { mimeType, videoBitsPerSecond: 3000000 })
+                : new MediaRecorder(canvasStream);
 
             const chunks = [];
             recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
 
-            const duration = Math.min(this.baseDuration || 30, this.soloDuration || 30) * 1000;
-
-            // Iniciar gravacao e reproducao sincronizada
+            // 7. Play sincronizado
             vBase.currentTime = 0; vSolo.currentTime = 0;
             await Promise.all([
-                vBase.play().catch(() => { }),
-                vSolo.play().catch(() => { })
+                vBase.play().catch(() => {}),
+                vSolo.play().catch(() => {})
             ]);
+
+            // 8. Iniciar draw loop + gravacao com warmup de 300ms
+            const renderLoop = () => {
+                ctx.drawImage(vBase, 0, (H - H1) / 2, W1, H1);
+                ctx.drawImage(vSolo, W1, (H - H2) / 2, W2, H2);
+                renderLoopId = requestAnimationFrame(renderLoop);
+            };
+            renderLoop();
+
+            await new Promise(r => setTimeout(r, 300)); // warmup
             recorder.start(300);
 
-            await new Promise(resolve => setTimeout(resolve, duration + 500));
+            // 9. Durar o tempo certo e parar
+            const duration = Math.min(this.baseDuration || 30, this.soloDuration || 30) * 1000;
+            await new Promise(r => setTimeout(r, duration + 400));
 
-            recorder.stop();
+            if (recorder.state !== 'inactive') recorder.stop();
             vBase.pause(); vSolo.pause();
-            await ctx.close();
+            cancelAnimationFrame(renderLoopId);
+            audioCtx.close();
 
-            // Montar Blob final e baixar
-            await new Promise(resolve => { recorder.onstop = resolve; });
+            // 10. Montar blob e baixar
+            await new Promise(r => { recorder.onstop = r; });
 
-            const finalBlob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' });
-            const ext = (recorder.mimeType || mimeType || '').includes('mp4') ? 'm4a' : 'webm';
+            if (chunks.length === 0) throw new Error('Nenhum chunk de video capturado. Tente usar o Chrome.');
+
+            const actualMime = recorder.mimeType || mimeType || 'video/webm';
+            const finalBlob = new Blob(chunks, { type: actualMime });
+            const ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
             const url = URL.createObjectURL(finalBlob);
-            const fileName = 'MaestroPro_Mix_' + Date.now() + '.' + ext;
-
-            // Limpar DOM
-            document.body.removeChild(vBase);
-            document.body.removeChild(vSolo);
+            const fileName = 'MaestroPro_Studio_' + Date.now() + '.' + ext;
 
             const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
+            a.href = url; a.download = fileName;
             document.body.appendChild(a);
             a.click();
             setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 5000);
 
-            this.btnExport.innerHTML = '<i class="fas fa-check"></i> Mixagem Baixada!';
+            this.btnExport.innerHTML = '<i class="fas fa-check"></i> Video Baixado!';
             this.btnExport.classList.remove('opacity-75', 'pointer-events-none', 'bg-purple-600', 'hover:bg-purple-700');
             this.btnExport.classList.add('bg-green-600', 'hover:bg-green-700');
-            MaestroCore.toast('Mixagem salva nos downloads!', 'success');
+            MaestroCore.toast('Video lado a lado gerado com sucesso!', 'success');
 
         } catch (error) {
             console.error('Studio export error:', error);
-            MaestroCore.toast('Falha na exportacao: ' + error.message, 'error');
+            MaestroCore.toast('Falha: ' + error.message, 'error');
             this.btnExport.innerHTML = '<i class="fas fa-file-export"></i> Gerar Versao Final';
             this.btnExport.classList.remove('opacity-75', 'pointer-events-none');
+        } finally {
+            cancelAnimationFrame(renderLoopId);
+            if (vBase && vBase.parentNode) { vBase.pause(); vBase.parentNode.removeChild(vBase); }
+            if (vSolo && vSolo.parentNode) { vSolo.pause(); vSolo.parentNode.removeChild(vSolo); }
+            if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
         }
     }
 }
