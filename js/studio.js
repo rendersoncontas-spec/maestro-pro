@@ -213,9 +213,11 @@ class StudioApp {
     handleRecordStop(type) {
         const blob = new Blob(this.recordedChunks, { type: this.mediaRecorder.mimeType });
         const url = URL.createObjectURL(blob);
+        const duration = (Date.now() - this.startTime) / 1000;
 
         if (type === 'base') {
             this.baseBlob = blob;
+            this.baseDuration = duration;
             this.elBase.src = url;
 
             document.getElementById('status-track-base').innerText = 'Gravada';
@@ -230,6 +232,7 @@ class StudioApp {
 
         } else if (type === 'solo') {
             this.soloBlob = blob;
+            this.soloDuration = duration;
 
             document.getElementById('status-track-solo').innerText = 'Gravada';
             document.getElementById('status-track-solo').classList.replace('text-brand', 'text-green-500');
@@ -288,75 +291,74 @@ class StudioApp {
         }
 
         this.state = 'mixing';
-
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!this.mixAudioCtx) {
-            this.mixAudioCtx = new AudioContextClass();
-        }
-        if (this.mixAudioCtx.state === 'suspended') await this.mixAudioCtx.resume();
-
         this.stopPreviewPlayback();
 
-        this.btnPreview.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+        this.btnPreview.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...';
         this.btnPreview.classList.add('opacity-75', 'pointer-events-none');
 
         try {
-            // Decodificar blobs em AudioBuffers nativos
-            const baseBuffer = await this.getAudioBuffer(this.mixAudioCtx, this.baseBlob);
-            const soloBuffer = await this.getAudioBuffer(this.mixAudioCtx, this.soloBlob);
+            // Criar elementos de vídeo em memória (Offscreen / Invisíveis)
+            this.previewVideoBase = document.createElement('video');
+            this.previewVideoSolo = document.createElement('video');
 
-            this.previewGainBase = this.mixAudioCtx.createGain();
-            this.previewGainSolo = this.mixAudioCtx.createGain();
+            this.previewVideoBase.src = URL.createObjectURL(this.baseBlob);
+            this.previewVideoSolo.src = URL.createObjectURL(this.soloBlob);
 
-            this.previewBaseSource = this.mixAudioCtx.createBufferSource();
-            this.previewBaseSource.buffer = baseBuffer;
-            this.previewBaseSource.connect(this.previewGainBase).connect(this.mixAudioCtx.destination);
-
-            this.previewSoloSource = this.mixAudioCtx.createBufferSource();
-            this.previewSoloSource.buffer = soloBuffer;
-            this.previewSoloSource.connect(this.previewGainSolo).connect(this.mixAudioCtx.destination);
-
+            // Volume Controllers
             const updateVols = () => {
-                if (this.previewGainBase && this.previewGainBase.gain) {
-                    this.previewGainBase.gain.value = document.getElementById('vol-base').value;
-                }
-                if (this.previewGainSolo && this.previewGainSolo.gain) {
-                    this.previewGainSolo.gain.value = document.getElementById('vol-solo').value;
-                }
+                if (this.previewVideoBase) this.previewVideoBase.volume = parseFloat(document.getElementById('vol-base').value);
+                if (this.previewVideoSolo) this.previewVideoSolo.volume = parseFloat(document.getElementById('vol-solo').value);
             };
             updateVols();
-
             document.getElementById('vol-base').addEventListener('input', updateVols);
             document.getElementById('vol-solo').addEventListener('input', updateVols);
 
-            // Visual: Exibir o vídeo do solo mutado em sincronia
+            // Sincronização via Promises (canplaythrough garantido)
+            const syncPromise = (vid) => new Promise(resolve => {
+                vid.oncanplaythrough = resolve;
+                vid.onerror = resolve; // Avança mesmo com erro para não travar
+                vid.load();
+            });
+
+            await Promise.all([
+                syncPromise(this.previewVideoBase),
+                syncPromise(this.previewVideoSolo)
+            ]);
+
+            // Reseta tempos cirurgicamente
+            this.previewVideoBase.currentTime = 0;
+            this.previewVideoSolo.currentTime = 0;
+
+            // Feedback Visual: Apenas 1 precisa aparecer mudo ou manter oculto e tocar o audio
             this.elBase.src = URL.createObjectURL(this.soloBlob);
             this.elBase.muted = true;
             this.elBase.currentTime = 0;
-            this.elBase.play().catch(e => console.warn("Video play prevented: ", e));
-
+            this.elBase.play().catch(() => { });
             this.elBase.style.display = 'block';
             this.elCamera.style.display = 'none';
 
-            // Iniciar sincronamente os buffers
-            this.previewBaseSource.start(0);
-            this.previewSoloSource.start(0);
+            // Plays Simultâneos Acústicos
+            this.previewVideoBase.play();
+            this.previewVideoSolo.play();
             this.isPlayingPreview = true;
 
-            const maxDuration = Math.max(baseBuffer.duration, soloBuffer.duration) * 1000;
+            const minDuration = Math.min(this.baseDuration || 0, this.soloDuration || 0) * 1000;
+            const fallbackDuration = Math.min(this.previewVideoBase.duration, this.previewVideoSolo.duration) * 1000 || 5000;
 
-            // Auto stop quando terminar
+            const timeToStop = minDuration > 0 ? minDuration : fallbackDuration;
+
+            // Auto stop rigoroso com tempo mínimo da faixa
             this.previewTimeout = setTimeout(() => {
                 if (this.isPlayingPreview) {
                     this.stopPreviewPlayback();
                     this.btnPreview.innerHTML = '<i class="fas fa-play"></i> Ouvir Mixagem';
                     this.btnPreview.classList.replace('text-red-500', 'text-gray-500');
                 }
-            }, maxDuration + 100);
+            }, timeToStop + 100);
 
         } catch (e) {
-            console.error("Erro no previewMix:", e);
-            MaestroCore.toast("Erro ao processar as faixas para reprodução.", "error");
+            console.error("Erro absoluto no previewMix:", e);
+            MaestroCore.toast("Falha na sincronização de vias de áudio.", "error");
             this.stopPreviewPlayback();
         }
 
@@ -379,35 +381,23 @@ class StudioApp {
         this.isPlayingPreview = false;
         if (this.previewTimeout) clearTimeout(this.previewTimeout);
 
-        if (this.previewBaseSource) {
-            try { this.previewBaseSource.stop(); } catch (e) { }
-            this.previewBaseSource.disconnect();
-            this.previewBaseSource = null;
+        if (this.previewVideoBase) {
+            try { this.previewVideoBase.pause(); this.previewVideoBase.src = ""; } catch (e) { }
+            this.previewVideoBase = null;
         }
-        if (this.previewSoloSource) {
-            try { this.previewSoloSource.stop(); } catch (e) { }
-            this.previewSoloSource.disconnect();
-            this.previewSoloSource = null;
+        if (this.previewVideoSolo) {
+            try { this.previewVideoSolo.pause(); this.previewVideoSolo.src = ""; } catch (e) { }
+            this.previewVideoSolo = null;
         }
 
-        if (this.previewGainBase) {
-            this.previewGainBase.disconnect();
-            this.previewGainBase = null;
-        }
-        if (this.previewGainSolo) {
-            this.previewGainSolo.disconnect();
-            this.previewGainSolo = null;
-        }
         if (this.elBase) this.elBase.pause();
-        if (this.mixAudioCtx && this.mixAudioCtx.state === 'running') {
-            this.mixAudioCtx.suspend();
-        }
     }
 
     trashTrack(type) {
         this.stopPreviewPlayback();
         if (type === 'base') {
             this.baseBlob = null;
+            this.baseDuration = 0;
             this.elBase.src = "";
             document.getElementById('status-track-base').innerText = 'Vazia';
             document.getElementById('status-track-base').classList.replace('text-green-500', 'text-brand');
@@ -430,6 +420,7 @@ class StudioApp {
 
         } else if (type === 'solo') {
             this.soloBlob = null;
+            this.soloDuration = 0;
             document.getElementById('status-track-solo').innerText = 'Vazia';
             document.getElementById('status-track-solo').classList.replace('text-green-500', 'text-brand');
             document.getElementById('status-track-solo').classList.replace('bg-green-500/10', 'bg-brand/10');
@@ -454,118 +445,123 @@ class StudioApp {
             return;
         }
 
-        this.btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Mixagem...';
+        this.btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Mixagem e Vídeo...';
         this.btnExport.classList.add('opacity-75', 'pointer-events-none');
-        MaestroCore.toast("Renderizando vídeo com áudio mixado...", "info");
+        MaestroCore.toast("Iniciando Renderização Lado a Lado...", "info");
 
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        const renderCtx = new AudioContextClass();
-        const dest = renderCtx.createMediaStreamDestination();
-
-        let baseBuffer, soloBuffer;
         try {
-            baseBuffer = await this.getAudioBuffer(renderCtx, this.baseBlob);
-            soloBuffer = await this.getAudioBuffer(renderCtx, this.soloBlob);
-        } catch (e) {
-            MaestroCore.toast("Erro ao processar áudio.", "error");
+            // 4. Iniciar AudioContext imediatamente (iOS exige que seja síncrono no evento de click)
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            const renderCtx = new AudioContextClass();
+            if (renderCtx.state === 'suspended') renderCtx.resume();
+
+            // 1. Criar Vídeos Invisíveis Offscreen
+            const vBase = document.createElement('video');
+            const vSolo = document.createElement('video');
+            vBase.playsInline = true; vBase.crossOrigin = "anonymous";
+            vSolo.playsInline = true; vSolo.crossOrigin = "anonymous";
+
+            vBase.src = URL.createObjectURL(this.baseBlob);
+            vSolo.src = URL.createObjectURL(this.soloBlob);
+
+            // 2. Aguardar carregamento para ter as dimensões reais (canplaythrough)
+            const syncPromise = (vid) => new Promise((resolve, reject) => {
+                vid.onloadedmetadata = () => { vid.oncanplaythrough = resolve; vid.load(); };
+                vid.onerror = reject;
+            });
+            await Promise.all([syncPromise(vBase), syncPromise(vSolo)]);
+
+            // 3. Preparar o Canvas (Lado a Lado)
+            const canvas = document.createElement('canvas');
+            canvas.width = vBase.videoWidth + vSolo.videoWidth;
+            canvas.height = Math.max(vBase.videoHeight, vSolo.videoHeight);
+            const ctx = canvas.getContext('2d');
+
+            const audioDest = renderCtx.createMediaStreamDestination();
+
+            // Roteamento: Video -> AudioContext -> Gain -> Destination
+            const srcBase = renderCtx.createMediaElementSource(vBase);
+            const gainBase = renderCtx.createGain();
+            gainBase.gain.value = parseFloat(document.getElementById('vol-base').value || 1);
+            srcBase.connect(gainBase).connect(audioDest);
+
+            const srcSolo = renderCtx.createMediaElementSource(vSolo);
+            const gainSolo = renderCtx.createGain();
+            gainSolo.gain.value = parseFloat(document.getElementById('vol-solo').value || 1);
+            srcSolo.connect(gainSolo).connect(audioDest);
+
+            // 5. Capturar Stream Combinada
+            const videoStream = canvas.captureStream(30); // Fixado em 30 FPS
+            if (audioDest.stream.getAudioTracks().length > 0) {
+                videoStream.addTrack(audioDest.stream.getAudioTracks()[0]);
+            }
+
+            // Descobrir melhor MimeType suportado
+            let mimeType = 'video/webm;codecs=vp8,opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/mp4'; // fallback
+
+            let recorder;
+            try {
+                recorder = new MediaRecorder(videoStream, { mimeType, videoBitsPerSecond: 3000000 });
+            } catch (e) {
+                recorder = new MediaRecorder(videoStream); // Fallback absoluto
+            }
+
+            let finalChunks = [];
+            recorder.ondataavailable = e => { if (e.data.size > 0) finalChunks.push(e.data); };
+
+            recorder.onstop = () => {
+                cancelAnimationFrame(this.renderLoopId);
+                const finalBlob = new Blob(finalChunks, { type: recorder.mimeType || mimeType });
+                const url = URL.createObjectURL(finalBlob);
+                const ext = (recorder.mimeType || mimeType).includes('mp4') ? 'mp4' : 'webm';
+                const fileName = `MaestroPro_VideoMix_${Date.now()}.${ext}`;
+
+                this.btnExport.innerHTML = `<a href="${url}" download="${fileName}" class="w-full h-full flex items-center justify-center gap-2"><i class="fas fa-download"></i> Baixar Vídeo Final</a>`;
+                this.btnExport.classList.remove('opacity-75', 'pointer-events-none');
+                this.btnExport.classList.replace('bg-purple-600', 'bg-green-600');
+                this.btnExport.classList.replace('hover:bg-purple-700', 'hover:bg-green-700');
+
+                // Cleanup Offscreen elements
+                vBase.src = ""; vSolo.src = "";
+                MaestroCore.toast("Renderização concluída! Clique no botão verde.", "success");
+            };
+
+            // 6. Loop de Renderização (DrawImage)
+            const renderLoop = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Desenhar base na esquerda
+                ctx.drawImage(vBase, 0, 0, vBase.videoWidth, vBase.videoHeight);
+                // Desenhar solo na direita
+                ctx.drawImage(vSolo, vBase.videoWidth, 0, vSolo.videoWidth, vSolo.videoHeight);
+                this.renderLoopId = requestAnimationFrame(renderLoop);
+            };
+
+            // Iniciar o Processo em Sincronia Rígida
+            this.renderLoopId = requestAnimationFrame(renderLoop);
+            recorder.start();
+
+            // Força reset de currentTime antes do start play para evitar gaps
+            vBase.currentTime = 0; vSolo.currentTime = 0;
+            vBase.play(); vSolo.play();
+
+            // 7. Controle de Duração (Menor Tempo Manda)
+            const minDurationMs = Math.min((this.baseDuration || 0), (this.soloDuration || 0)) * 1000;
+            const fallbackDurationMs = Math.min(vBase.duration, vSolo.duration) * 1000 || 5000;
+            const targetDuration = minDurationMs > 0 ? minDurationMs : fallbackDurationMs;
+
+            setTimeout(() => {
+                if (recorder.state !== 'inactive') recorder.stop();
+                vBase.pause(); vSolo.pause();
+                renderCtx.close();
+            }, targetDuration + 100);
+
+        } catch (error) {
+            console.error("Studio render error:", error);
+            MaestroCore.toast(`Falha Crítica no Render: ${error.message}`, "error");
             this.btnExport.innerHTML = '<i class="fas fa-file-export"></i> Gerar Versão Final';
             this.btnExport.classList.remove('opacity-75', 'pointer-events-none');
-            return;
         }
-
-        const sourceBase = renderCtx.createBufferSource();
-        sourceBase.buffer = baseBuffer;
-        const gainBase = renderCtx.createGain();
-        gainBase.gain.value = document.getElementById('vol-base').value;
-        sourceBase.connect(gainBase).connect(dest);
-
-        const sourceSolo = renderCtx.createBufferSource();
-        sourceSolo.buffer = soloBuffer;
-        const gainSolo = renderCtx.createGain();
-        gainSolo.gain.value = document.getElementById('vol-solo').value;
-        sourceSolo.connect(gainSolo).connect(dest);
-
-        // Prepara video visível
-        this.elBase.src = URL.createObjectURL(this.soloBlob);
-        this.elBase.muted = true;
-        this.elBase.currentTime = 0;
-        this.elBase.style.display = 'block';
-
-        let videoStream = null;
-        let isFallback = false;
-
-        try {
-            await this.elBase.play();
-            if (this.elBase.captureStream) {
-                videoStream = this.elBase.captureStream(30);
-            } else if (this.elBase.mozCaptureStream) {
-                videoStream = this.elBase.mozCaptureStream(30);
-            }
-        } catch (e) {
-            console.warn("Capture Stream Error: ", e);
-        }
-
-        const combinedStream = new MediaStream();
-        if (videoStream && videoStream.getVideoTracks().length > 0) {
-            combinedStream.addTrack(videoStream.getVideoTracks()[0]);
-        } else {
-            isFallback = true;
-            MaestroCore.toast("Vídeo indisponível. Exportando mixagem de Áudio...", "warning");
-        }
-
-        dest.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
-
-        let mimeType = 'video/webm;codecs=vp8,opus';
-        if (isFallback) mimeType = 'audio/webm;codecs=opus';
-        if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = isFallback ? 'audio/mp4' : 'video/mp4';
-
-        let recorder;
-        try {
-            recorder = new MediaRecorder(combinedStream, { mimeType: mimeType, videoBitsPerSecond: 2500000 });
-        } catch (e) {
-            recorder = new MediaRecorder(combinedStream);
-        }
-
-        let finalChunks = [];
-        recorder.ondataavailable = e => { if (e.data.size > 0) finalChunks.push(e.data); };
-
-        recorder.onstop = () => {
-            const finalBlob = new Blob(finalChunks, { type: recorder.mimeType || mimeType });
-            const url = URL.createObjectURL(finalBlob);
-
-            const ext = (recorder.mimeType || mimeType).includes('mp4') ? 'mp4' : 'webm';
-            const fileName = isFallback ? `MaestroPro_AudioMix_${Date.now()}.${ext}` : `MaestroPro_VideoMix_${Date.now()}.${ext}`;
-
-            this.btnExport.innerHTML = `<a href="${url}" download="${fileName}" class="w-full h-full flex items-center justify-center gap-2"><i class="fas fa-download"></i> Baixar Arquivo Final</a>`;
-            this.btnExport.classList.remove('opacity-75', 'pointer-events-none');
-            this.btnExport.classList.replace('bg-purple-600', 'bg-green-600');
-            this.btnExport.classList.replace('hover:bg-purple-700', 'hover:bg-green-700');
-
-            let dLink = document.getElementById('studio-download-link');
-            if (dLink && dLink.parentElement) {
-                const existing = document.getElementById('isolate-downloads');
-                if (existing) existing.remove();
-
-                dLink.parentElement.innerHTML += `
-                   <div class="flex gap-2 mt-2" id="isolate-downloads">
-                       <a href="${URL.createObjectURL(this.baseBlob)}" download="Video_Base.webm" class="flex-1 py-3 text-center bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl text-xs font-bold transition-colors">Baixar Câmera Base</a>
-                       <a href="${URL.createObjectURL(this.soloBlob)}" download="Video_Solo.webm" class="flex-1 py-3 text-center bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl text-xs font-bold transition-colors">Baixar Câmera Solo</a>
-                   </div>
-                `;
-            }
-
-            MaestroCore.toast("Processamento concluído! Clique no botão verde para Salvar.", "success");
-            this.elBase.pause();
-        };
-
-        recorder.start();
-        sourceBase.start(0);
-        sourceSolo.start(0);
-
-        const maxDuration = Math.max(baseBuffer.duration, soloBuffer.duration) * 1000;
-        setTimeout(() => {
-            if (recorder.state !== 'inactive') recorder.stop();
-        }, maxDuration + 200);
     }
 }
 
