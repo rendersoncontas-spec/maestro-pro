@@ -1,0 +1,1906 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <!-- SEO & Identity -->
+    <title>Maestro Pro - Estudo Musical Inteligente</title>
+    <meta name="description"
+        content="O Maestro Pro é um estúdio de música completo no seu bolso. Metrônomo profissional, afinador cirúrgico, detector de acordes via FFT e banco de escalas. Sem anúncios.">
+    <meta name="keywords"
+        content="metrônomo, afinador de violão, campo harmônico, teoria musical, ouvido absoluto, fretboard, pwa">
+    <meta name="author" content="Maestro Studio">
+
+    <!-- PWA & Mobile Optimization -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#10b981">
+
+    <!-- Apple iOS Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Violão Pro">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="./css/style.css">
+
+    <!-- Dependências Externas (CDNs com preconnect para performance) -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+
+    <!-- Configuração do Tailwind (Tokens de Design Profissional) -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#10b981', // Emerald 500
+                            DEFAULT: '#059669', // Emerald 600
+                            dark: '#047857', // Emerald 700
+                        },
+                        dark: {
+                            bg: '#0f172a', // Slate 900
+                            surface: '#1e293b', // Slate 800
+                            element: '#334155' // Slate 700
+                        },
+                        wood: {
+                            dark: '#2d1b11',
+                            light: '#4a2f1d'
+                        },
+                        worship: {
+                            bg: '#1a1025', // Roxo profundo
+                            surface: '#2d1b4e',
+                            brand: '#8b5cf6' // Purple 500
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- ==========================================
+         MÓDULO: style.css (Estilos Globais)
+         ========================================== -->
+
+
+    <!-- ==========================================
+         MÓDULO: metronomo.css (Estilos Específicos)
+         ========================================== -->
+
+
+    <!-- ==========================================
+         MÓDULO: afinador.css (Estilos Específicos)
+         ========================================== -->
+
+
+    <!-- ==========================================
+         MÓDULO: braço.css (Estilos Específicos)
+         ========================================== -->
+
+</head>
+
+<body
+    class="bg-gray-50 text-gray-900 dark:bg-dark-bg dark:text-gray-100 min-h-[100dvh] flex flex-col select-none font-sans transition-colors duration-300">
+
+    <!-- ==========================================
+         CAMADA UI: MODAIS E OVERLAYS
+         ========================================== -->
+
+    <!-- Modal de Confirmação de Reset -->
+    <div id="reset-modal"
+        class="fixed inset-0 z-[60] bg-gray-900/80 backdrop-blur-sm flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-white dark:bg-dark-surface p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300">
+            <div
+                class="w-20 h-20 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-4xl mb-6 mx-auto">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-center mb-2">Zerar Tudo?</h3>
+            <p class="text-center text-gray-500 dark:text-gray-400 text-sm mb-8">Tem certeza que deseja apagar todo o
+                seu histórico, estatísticas e conquistas? Esta ação é permanente.</p>
+            <div class="flex gap-4">
+                <button id="btn-cancel-reset"
+                    class="flex-1 py-4 rounded-xl font-bold bg-gray-100 dark:bg-dark-element text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-95">Cancelar</button>
+                <button id="btn-confirm-reset"
+                    class="flex-1 py-4 rounded-xl font-bold bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30 transition-all active:scale-95">Apagar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         CAMADA UI: CABEÇALHO E NAVEGAÇñO
+         ========================================== -->
+    <header
+        class="bg-white dark:bg-dark-surface shadow-sm z-30 sticky top-0 shrink-0 border-b border-gray-200 dark:border-gray-800 pt-[env(safe-area-inset-top)]">
+        <div class="max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <i class="fas fa-compact-disc text-brand text-3xl animate-spin-slow drop-shadow-md"></i>
+                <div class="flex flex-col">
+                    <span class="text-2xl font-black tracking-tight leading-none">Maestro <span
+                            class="text-brand">Pro</span></span>
+                    <span class="text-[10px] uppercase font-bold text-gray-400 tracking-widest hidden md:block">Studio
+                        Version</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 lg:gap-6">
+                <!-- Status Global (Modo Foco/Igreja indicadors) -->
+                <div id="global-status-badges" class="hidden md:flex items-center gap-2">
+                    <!-- Injetado via JS -->
+                </div>
+
+                <div id="user-profile-area"
+                    class="flex items-center gap-3 bg-gray-100 dark:bg-dark-element px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 transition-colors">
+                    <div class="w-6 h-6 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs"><i
+                            class="fas fa-user-shield"></i></div>
+                    <span class="text-sm font-bold text-gray-600 dark:text-gray-300">Modo Local</span>
+                </div>
+
+                <button id="btn-install-pwa"
+                    class="hidden items-center gap-2 bg-brand/10 text-brand hover:bg-brand hover:text-white px-4 py-2 rounded-full font-bold text-sm transition-colors cursor-pointer border border-brand/20">
+                    <i class="fas fa-download"></i> <span class="hidden sm:inline">Instalar App</span>
+                </button>
+
+                <div class="h-8 w-px bg-gray-300 dark:bg-gray-700"></div>
+
+                <button id="btn-theme-toggle"
+                    class="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-dark-element transition-colors text-gray-600 dark:text-gray-300 text-lg">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 relative">
+
+        <!-- Menu Lateral Desktop / Bottom Bar Mobile -->
+        <nav class="bg-white dark:bg-dark-surface border-t md:border-t-0 md:border-r border-gray-200 dark:border-gray-800 flex md:flex-col md:w-[110px] shrink-0 fixed bottom-0 w-full md:relative z-50 justify-start pt-2 md:pt-8 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:pb-8 overflow-visible scrollbar-hide shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-none transition-all duration-300"
+            id="main-nav">
+
+            <!-- Items de Navegação -->
+            <div class="flex md:flex-col gap-1 md:gap-4 px-2 md:px-0 mx-auto md:mx-0 w-full md:items-center">
+                <button
+                    class="nav-btn active flex flex-col items-center p-3 text-gray-400 hover:text-brand dark:hover:text-brand transition-colors group min-w-[70px]"
+                    data-target="view-metronome">
+                    <div
+                        class="w-14 h-14 rounded-2xl flex items-center justify-center bg-transparent group-[.active]:bg-brand/10 group-[.active]:text-brand transition-all group-[.active]:shadow-inner group-[.active]:scale-105">
+                        <i class="fas fa-stopwatch text-2xl"></i>
+                    </div>
+                    <span class="text-[10px] font-bold mt-1 uppercase tracking-wide">Metrônomo</span>
+                </button>
+
+                <button
+                    class="nav-btn flex flex-col items-center p-3 text-gray-400 hover:text-brand dark:hover:text-brand transition-colors group min-w-[70px]"
+                    data-target="view-tuner">
+                    <div
+                        class="w-14 h-14 rounded-2xl flex items-center justify-center bg-transparent group-[.active]:bg-brand/10 group-[.active]:text-brand transition-all group-[.active]:shadow-inner group-[.active]:scale-105">
+                        <i class="fas fa-guitar text-2xl"></i>
+                    </div>
+                    <span class="text-[10px] font-bold mt-1 uppercase tracking-wide">Afinador</span>
+                </button>
+
+                <button
+                    class="nav-btn flex flex-col items-center p-3 text-gray-400 hover:text-purple-500 dark:hover:text-purple-400 transition-colors group min-w-[70px]"
+                    data-target="view-studio">
+                    <div
+                        class="w-14 h-14 rounded-2xl flex items-center justify-center bg-transparent group-[.active]:bg-purple-500/10 group-[.active]:text-purple-500 transition-all group-[.active]:shadow-inner group-[.active]:scale-105">
+                        <i class="fas fa-microphone-alt text-2xl"></i>
+                    </div>
+                    <span class="text-[10px] font-bold mt-1 uppercase tracking-wide">Estúdio</span>
+                </button>
+
+                <!-- Menu Extra / Ferramentas em Dropdown -->
+                <div class="relative z-[60]" id="extra-menu-container">
+                    <button id="btn-toggle-extra"
+                        class="nav-btn-parent flex flex-col items-center p-3 text-gray-400 hover:text-brand dark:hover:text-brand transition-colors min-w-[70px]">
+                        <div
+                            class="w-14 h-14 rounded-2xl flex items-center justify-center bg-transparent group-[.active]:bg-brand/10 group-[.active]:text-brand transition-all group-[.active]:shadow-inner group-[.active]:scale-105">
+                            <i class="fas fa-toolbox text-2xl"></i>
+                        </div>
+                        <span class="text-[10px] font-bold mt-1 uppercase tracking-wide">Ferramentas <i
+                                class="fas fa-chevron-up text-[8px] ml-1"></i></span>
+                    </button>
+
+                    <!-- Submenu Ferramentas -->
+                    <div id="extra-dropdown"
+                        class="absolute bottom-full left-1/2 md:left-full md:bottom-auto md:top-0 -translate-x-1/2 md:translate-x-2 md:-translate-y-4 mb-2 md:mb-0 w-max bg-white dark:bg-dark-surface rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-2 flex flex-row md:flex-col gap-1 transition-all origin-bottom md:origin-left hidden opacity-0 scale-95 pointer-events-none">
+
+                        <button
+                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
+                            data-target="view-harmony">
+                            <i class="fas fa-project-diagram w-6 text-center mr-2"></i> Campo Harmônico
+                        </button>
+
+                        <button
+                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
+                            data-target="view-dashboard">
+                            <i class="fas fa-chart-pie w-6 text-center mr-2"></i> Painel Estatístico
+                        </button>
+
+                        <button
+                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
+                            data-target="view-professor">
+                            <i class="fas fa-chalkboard-teacher w-6 text-center mr-2"></i> Mentor Inteligente
+                        </button>
+
+                        <button
+                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
+                            data-target="view-eartrainer">
+                            <i class="fas fa-brain w-6 text-center mr-2"></i> Treino Auditivo
+                        </button>
+
+                        <button
+                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
+                            data-target="view-detector">
+                            <i class="fas fa-ear-listen w-6 text-center mr-2"></i> Detector Analítico
+                        </button>
+
+                        <button
+                            class="nav-btn flex items-center px-4 py-3 text-sm font-bold text-gray-500 hover:text-brand hover:bg-gray-50 dark:hover:bg-dark-element transition-colors rounded-xl text-left"
+                            data-target="view-fretboard">
+                            <i class="fas fa-grip-lines w-6 text-center mr-2"></i> Braço do Violão
+                        </button>
+
+                    </div>
+                </div>
+
+                <button
+                    class="nav-btn flex flex-col items-center p-3 text-gray-400 hover:text-brand dark:hover:text-brand transition-colors group min-w-[70px]"
+                    data-target="view-about">
+                    <div
+                        class="w-14 h-14 rounded-2xl flex items-center justify-center bg-transparent group-[.active]:bg-brand/10 group-[.active]:text-brand transition-all group-[.active]:shadow-inner group-[.active]:scale-105">
+                        <i class="fas fa-info-circle text-2xl"></i>
+                    </div>
+                    <span class="text-[10px] font-bold mt-1 uppercase tracking-wide">Sobre</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Container de Vistas Principais -->
+        <main class="flex-1 p-4 md:p-8 pb-24 md:pb-8 relative scroll-smooth bg-gray-50/50 dark:bg-dark-bg/50">
+
+            <!-- ==========================================
+                 VIEW: METRÔNOMO PROFISSIONAL
+                 ========================================== -->
+            <section id="view-metronome" class="view-section max-w-6xl mx-auto h-full flex flex-col animate-fade-in">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 flex-1">
+
+                    <!-- Painel Central do Metrônomo -->
+                    <div
+                        class="xl:col-span-2 bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm flex flex-col items-center justify-center relative border border-gray-100 dark:border-gray-800">
+
+                        <div id="visual-pulse"
+                            class="absolute top-8 right-8 w-5 h-5 rounded-full bg-gray-300 dark:bg-dark-element transition-colors">
+                        </div>
+
+                        <!-- Indicador de Prática & Offset Rítmico -->
+                        <div class="absolute top-8 left-8 flex flex-col gap-2 z-10">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="bg-gray-100 dark:bg-dark-element px-4 py-2 rounded-xl shadow-inner border border-gray-200 dark:border-gray-700 flex flex-col">
+                                    <span
+                                        class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Sessão
+                                        Atual</span>
+                                    <span id="timer-display"
+                                        class="font-mono text-gray-800 dark:text-white text-2xl font-black leading-none">00:00</span>
+                                </div>
+                            </div>
+                            <div id="rhythm-offset-display"
+                                class="text-xs font-bold px-3 py-1 rounded-lg text-center transition-colors hidden opacity-0">
+                                Perfeito
+                            </div>
+                        </div>
+
+                        <!-- Controle de BPM -->
+                        <div class="text-center mb-12 w-full mt-24 md:mt-16">
+                            <div class="flex items-center justify-center gap-6 mb-4">
+                                <button id="btn-bpm-minus"
+                                    class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-2xl transition-all active:scale-95 shadow-sm border border-gray-200 dark:border-gray-700"><i
+                                        class="fas fa-minus"></i></button>
+
+                                <div class="relative group">
+                                    <input type="number" id="bpm-display" value="120"
+                                        class="text-8xl md:text-[140px] font-black tracking-tighter bg-transparent text-center outline-none w-64 m-0 p-0 text-gray-800 dark:text-white selection:bg-brand/30 transition-all">
+                                    <div
+                                        class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-brand transition-all group-hover:w-full rounded-full">
+                                    </div>
+                                </div>
+
+                                <button id="btn-bpm-plus"
+                                    class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-2xl transition-all active:scale-95 shadow-sm border border-gray-200 dark:border-gray-700"><i
+                                        class="fas fa-plus"></i></button>
+                            </div>
+                            <div class="text-gray-400 uppercase tracking-[0.3em] text-sm font-black">
+                                Batidas Por Minuto
+                            </div>
+                        </div>
+
+                        <input type="range" id="bpm-slider" min="20" max="300" value="120"
+                            class="w-full max-w-xl mb-12">
+
+                        <!-- Controles Secundários -->
+                        <div class="flex flex-wrap justify-center gap-4 mb-16 w-full">
+                            <button id="btn-tap"
+                                class="px-8 py-4 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 font-bold text-lg transition-all active:scale-95 flex items-center gap-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                                <i class="fas fa-hand-pointer text-brand"></i> Tap Tempo
+                            </button>
+
+                            <div
+                                class="flex items-center bg-gray-100 dark:bg-dark-element rounded-2xl p-2 shadow-sm border border-gray-200 dark:border-gray-700 text-lg">
+                                <select id="time-sig-beats"
+                                    class="bg-transparent border-none outline-none font-black text-center appearance-none px-4 py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition">
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4" selected>4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="9">9</option>
+                                    <option value="12">12</option>
+                                </select>
+                                <span class="flex items-center text-gray-400 font-light mx-1">/</span>
+                                <select id="time-sig-note"
+                                    class="bg-transparent border-none outline-none font-black text-center appearance-none px-4 py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition">
+                                    <option value="4" selected>4</option>
+                                    <option value="8">8</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Indicadores Visuais de Compasso -->
+                        <div id="beat-indicators" class="hidden">
+                            <!-- Injetado via JS -->
+                        </div>
+
+                        <!-- Botão Play Primário -->
+                        <button id="btn-play-metronome"
+                            class="w-32 h-32 rounded-full bg-brand hover:bg-brand-dark text-white shadow-[0_10px_40px_-10px_rgba(16,185,129,0.8)] flex items-center justify-center text-5xl transition-all active:scale-90 transform hover:-translate-y-2">
+                            <i class="fas fa-play ml-2"></i>
+                        </button>
+                    </div>
+
+                    <!-- Configurações e Modos Especiais -->
+                    <div class="flex flex-col gap-6">
+
+                        <!-- Painel Principal de Ajustes -->
+                        <div
+                            class="bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm border border-gray-100 dark:border-gray-800">
+                            <h3 class="font-bold text-xl mb-6 text-gray-800 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-sliders-h text-brand"></i> Ajustes Sonoros
+                            </h3>
+
+                            <div class="space-y-6">
+                                <div>
+                                    <label
+                                        class="text-xs text-gray-500 uppercase font-bold tracking-widest block mb-3">Subdivisão
+                                        Rítmica</label>
+                                    <div class="grid grid-cols-4 gap-2">
+                                        <button
+                                            class="subdiv-btn active group p-3 rounded-xl bg-gray-100 dark:bg-dark-element hover:bg-brand/10 dark:hover:bg-brand/20 transition-all border border-transparent flex items-center justify-center"
+                                            data-val="1" title="Semínima (1 nota)">
+                                            <svg class="block w-8 h-8 fill-current text-gray-500 group-[.active]:text-brand group-hover:text-brand transition-all duration-300 transform group-hover:-translate-y-1"
+                                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <ellipse cx="9" cy="18" rx="4" ry="3" transform="rotate(-15 9 18)" />
+                                                <rect x="12" y="4" width="2" height="14" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            class="subdiv-btn group p-3 rounded-xl bg-gray-100 dark:bg-dark-element hover:bg-brand/10 dark:hover:bg-brand/20 transition-all border border-transparent flex items-center justify-center"
+                                            data-val="2" title="Colcheias (2 notas)">
+                                            <svg class="block w-8 h-8 fill-current text-gray-500 group-[.active]:text-brand group-hover:text-brand transition-all duration-300 transform group-hover:-translate-y-1"
+                                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <ellipse cx="6" cy="19" rx="3.5" ry="2.5"
+                                                    transform="rotate(-15 6 19)" />
+                                                <rect x="8.5" y="6" width="2" height="13" />
+                                                <ellipse cx="16" cy="17" rx="3.5" ry="2.5"
+                                                    transform="rotate(-15 16 17)" />
+                                                <rect x="18.5" y="4" width="2" height="13" />
+                                                <polygon points="8.5,6 20.5,4 20.5,6.5 8.5,8.5" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            class="subdiv-btn group p-3 rounded-xl bg-gray-100 dark:bg-dark-element hover:bg-brand/10 dark:hover:bg-brand/20 transition-all border border-transparent flex items-center justify-center"
+                                            data-val="3" title="Tercina (3 notas)">
+                                            <svg class="block w-8 h-8 fill-current text-gray-500 group-[.active]:text-brand group-hover:text-brand transition-all duration-300 transform group-hover:-translate-y-1"
+                                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <ellipse cx="4" cy="19" rx="2.5" ry="2" transform="rotate(-15 4 19)" />
+                                                <rect x="5.5" y="6" width="1.5" height="13" />
+
+                                                <ellipse cx="12" cy="19" rx="2.5" ry="2"
+                                                    transform="rotate(-15 12 19)" />
+                                                <rect x="13.5" y="6" width="1.5" height="13" />
+
+                                                <ellipse cx="20" cy="19" rx="2.5" ry="2"
+                                                    transform="rotate(-15 20 19)" />
+                                                <rect x="21.5" y="6" width="1.5" height="13" />
+
+                                                <!-- Trave de união -->
+                                                <rect x="5.5" y="4" width="17.5" height="2" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            class="subdiv-btn group p-3 rounded-xl bg-gray-100 dark:bg-dark-element hover:bg-brand/10 dark:hover:bg-brand/20 transition-all border border-transparent flex items-center justify-center"
+                                            data-val="4" title="Semicolcheias (4 notas)">
+                                            <svg class="block w-8 h-8 fill-current text-gray-500 group-[.active]:text-brand group-hover:text-brand transition-all duration-300 transform group-hover:-translate-y-1"
+                                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <ellipse cx="3" cy="19" rx="2" ry="1.5" transform="rotate(-15 3 19)" />
+                                                <rect x="4" y="8" width="1.5" height="11" />
+                                                <ellipse cx="9" cy="19" rx="2" ry="1.5" transform="rotate(-15 9 19)" />
+                                                <rect x="10" y="8" width="1.5" height="11" />
+                                                <ellipse cx="15" cy="19" rx="2" ry="1.5"
+                                                    transform="rotate(-15 15 19)" />
+                                                <rect x="16" y="8" width="1.5" height="11" />
+                                                <ellipse cx="21" cy="19" rx="2" ry="1.5"
+                                                    transform="rotate(-15 21 19)" />
+                                                <rect x="22" y="8" width="1.5" height="11" />
+                                                <rect x="4" y="6" width="19.5" height="2" />
+                                                <rect x="4" y="9" width="19.5" height="2" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="text-xs text-gray-500 uppercase font-bold tracking-widest block mb-3">Timbre</label>
+                                    <div class="relative">
+                                        <select id="sound-select"
+                                            class="w-full bg-gray-100 dark:bg-dark-element p-4 rounded-xl border border-gray-200 dark:border-gray-700 outline-none cursor-pointer font-bold appearance-none transition-colors hover:border-brand">
+                                            <option value="digital">Click Digital Profissional</option>
+                                            <option value="woodblock">Bloco de Madeira (Acústico)
+                                            </option>
+                                            <option value="cowbell">Cowbell / Bateria</option>
+                                            <option value="voice">Contagem Vocal Humana</option>
+                                        </select>
+                                        <i
+                                            class="fas fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="flex items-center justify-between bg-gray-50 dark:bg-dark-element/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                                    <div class="flex flex-col">
+                                        <label class="text-sm font-bold text-gray-700 dark:text-gray-200">Acentuar
+                                            1º
+                                            Tempo</label>
+                                        <span class="text-xs text-gray-400">Destaca o início do
+                                            compasso</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="accent-toggle" class="sr-only peer" checked>
+                                        <div
+                                            class="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-brand shadow-inner">
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Módulo de Gravação de Estudo -->
+                        <div
+                            class="bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm flex-1 border border-gray-100 dark:border-gray-800">
+                            <h3 class="font-bold text-xl mb-2 text-gray-800 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-video text-brand"></i> Gravação
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Grave o áudio (com metronômo) e o
+                                vídeo da sua prática musical diretamente do navegador.</p>
+
+                            <div class="space-y-5">
+                                <div
+                                    class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-4">
+                                    <label class="text-sm font-bold text-gray-700 dark:text-gray-200">Vídeo +
+                                        Áudio</label>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="recorder-video-toggle" class="sr-only peer" checked>
+                                        <div
+                                            class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand">
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <!-- Camera Preview Container -->
+                                <div id="recorder-preview-container"
+                                    class="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-inner flex items-center justify-center transition-all">
+                                    <i class="fas fa-microphone-alt text-4xl text-gray-600 dark:text-gray-400 absolute z-0 hidden"
+                                        id="recorder-audio-only-icon"></i>
+                                    <video id="recorder-preview"
+                                        class="w-full h-full object-cover z-10 transition-opacity" autoplay muted
+                                        playsinline></video>
+
+                                    <!-- Recording indicator overlay -->
+                                    <div id="recorder-live-badge"
+                                        class="absolute top-3 right-3 bg-red-500/90 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md flex items-center gap-2 opacity-0 transition-opacity z-20 shadow-md">
+                                        <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                        Rec
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-3">
+                                    <button id="btn-recorder-start"
+                                        class="flex-1 py-3 bg-brand hover:bg-brand-dark text-white rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+                                        <i class="fas fa-circle text-[10px] text-red-500"></i> Preparar
+                                    </button>
+                                    <button id="btn-recorder-stop"
+                                        class="flex-1 py-3 bg-gray-200 dark:bg-dark-element hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 opacity-50 pointer-events-none">
+                                        <i class="fas fa-stop text-[10px]"></i> Parar
+                                    </button>
+                                </div>
+
+                                <div id="recorder-download-container"
+                                    class="hidden pt-2 border-t border-gray-100 dark:border-gray-700 animate-fade-in flex flex-col gap-3">
+                                    <video id="recorder-playback"
+                                        class="w-full aspect-video rounded-xl overflow-hidden bg-black hidden" controls
+                                        playsinline></video>
+                                    <audio id="recorder-playback-audio" class="w-full mt-2 hidden" controls></audio>
+                                    <a id="btn-recorder-download" href="#"
+                                        class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+                                        <i class="fas fa-download"></i> Salvar Gravação
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Módulo Avançado: Treino Progressivo -->
+                        <div
+                            class="bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm flex-1 border border-gray-100 dark:border-gray-800">
+                            <h3 class="font-bold text-xl mb-2 text-gray-800 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-dumbbell text-orange-500"></i> Speed Trainer
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Aumenta o BPM
+                                automaticamente para
+                                treino de velocidade (Shredding).</p>
+
+                            <div class="space-y-5">
+                                <div
+                                    class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-4">
+                                    <label class="text-sm font-bold text-gray-700 dark:text-gray-200">Ativar
+                                        Sistema</label>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="prog-toggle" class="sr-only peer">
+                                        <div
+                                            class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500">
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div id="prog-settings"
+                                    class="opacity-40 pointer-events-none transition-all duration-300 space-y-4">
+                                    <div
+                                        class="flex justify-between items-center bg-gray-50 dark:bg-dark-element/30 p-3 rounded-xl">
+                                        <span class="text-sm font-semibold">Incremento:</span>
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" id="prog-bpm-step" value="5" min="1" max="50"
+                                                class="w-16 bg-white dark:bg-dark-element p-2 rounded-lg text-center font-bold outline-none border border-gray-200 dark:border-gray-600">
+                                            <span class="text-xs font-bold text-gray-400">BPM</span>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="flex justify-between items-center bg-gray-50 dark:bg-dark-element/30 p-3 rounded-xl">
+                                        <span class="text-sm font-semibold">A cada:</span>
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" id="prog-bars" value="4" min="1" max="100"
+                                                class="w-16 bg-white dark:bg-dark-element p-2 rounded-lg text-center font-bold outline-none border border-gray-200 dark:border-gray-600">
+                                            <span class="text-xs font-bold text-gray-400">Comp.</span>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="flex justify-between items-center bg-gray-50 dark:bg-dark-element/30 p-3 rounded-xl">
+                                        <span class="text-sm font-semibold">Teto Máximo:</span>
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" id="prog-bpm-max" value="200" min="20" max="300"
+                                                class="w-16 bg-white dark:bg-dark-element p-2 rounded-lg text-center font-bold outline-none border border-gray-200 dark:border-gray-600 focus:border-orange-500">
+                                            <span class="text-xs font-bold text-gray-400">BPM</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 VIEW: AFINADOR DE ALTA PRECISñO
+                 ========================================== -->
+            <section id="view-tuner"
+                class="view-section hidden max-w-4xl mx-auto h-full flex flex-col items-center justify-center animate-fade-in">
+
+                <div
+                    class="bg-white dark:bg-dark-surface rounded-[3rem] p-8 md:p-12 shadow-sm w-full flex flex-col items-center relative overflow-hidden border border-gray-100 dark:border-gray-800">
+
+                    <div id="tuner-init-overlay"
+                        class="absolute inset-0 z-30 bg-white/95 dark:bg-dark-surface/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center transition-all duration-500">
+                        <div
+                            class="w-24 h-24 rounded-full bg-brand/10 text-brand flex items-center justify-center text-5xl mb-6">
+                            <i class="fas fa-microphone-alt animate-pulse"></i>
+                        </div>
+                        <h3 class="text-3xl font-black mb-3">Acesso ao Microfone</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-md leading-relaxed">Para
+                            detectar as
+                            frequências com precisão cirúrgica, o algoritmo necessita de permissão
+                            para processar o
+                            áudio localmente.</p>
+                        <button id="btn-start-tuner"
+                            class="px-10 py-5 bg-brand hover:bg-brand-dark text-white rounded-2xl font-black text-xl shadow-[0_10px_30px_-10px_rgba(16,185,129,0.8)] transition-all active:scale-95 flex items-center gap-3">
+                            <i class="fas fa-power-off"></i> Ligar Afinador
+                        </button>
+                    </div>
+
+                    <!-- Configurações do Afinador -->
+                    <div
+                        class="flex flex-col md:flex-row w-full justify-between items-center gap-4 mb-10 bg-gray-50 dark:bg-dark-element/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div class="w-full md:w-auto">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-2 pl-1">Instrumento
+                                / Afinação</label>
+                            <div class="relative">
+                                <select id="tuner-preset"
+                                    class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-600 px-5 py-3 rounded-xl text-sm font-bold outline-none cursor-pointer w-full md:w-64 appearance-none shadow-sm transition hover:border-brand focus:border-brand">
+                                    <option value="chromatic">Cromático (Modo Livre)</option>
+                                    <option value="guitar">Violão / Guitarra Padrão</option>
+                                    <option value="guitarDropD">Guitarra Drop D</option>
+                                    <option value="guitar7">Violão 7 Cordas</option>
+                                    <option value="viola">Viola Caipira (Cebolão E)</option>
+                                    <option value="bass">Baixo (4 Cordas)</option>
+                                    <option value="bass5">Baixo (5 Cordas)</option>
+                                    <option value="ukulele">Ukulele (C Padrão)</option>
+                                    <option value="violin">Violino</option>
+                                </select>
+                                <i
+                                    class="fas fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-auto md:text-right">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-2 pl-1">Frequência
+                                Referência (A4)</label>
+                            <div
+                                class="flex items-center justify-end bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden shadow-sm focus-within:border-brand transition">
+                                <input type="number" id="tuner-ref" value="440" min="415" max="460"
+                                    class="bg-transparent w-24 px-4 py-3 font-black outline-none text-center text-brand">
+                                <span class="pr-4 text-xs font-bold text-gray-400">Hz</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seletor Manual de Cordas (Oculto em Cromático) -->
+                    <div id="string-selector-container" class="w-full mb-10 hidden flex-col items-center">
+                        <label class="text-[10px] text-gray-400 uppercase font-black tracking-widest block mb-3">Travar
+                            Corda Específica</label>
+                        <div
+                            class="flex gap-2 w-full overflow-x-auto pb-2 justify-start md:justify-center scrollbar-hide px-2">
+                            <button
+                                class="string-btn active px-6 py-2 rounded-full bg-brand text-white text-sm font-black shrink-0 shadow-md transition-all transform hover:scale-105"
+                                data-idx="-1">AUTO</button>
+                            <div id="manual-strings" class="flex gap-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Meter Analógico Central -->
+                    <div class="relative flex flex-col items-center mb-8">
+                        <div class="tuner-meter">
+                            <div class="needle" id="tuner-needle"></div>
+
+                            <!-- Marcadores visuais internos da agulha -->
+                            <div
+                                class="absolute bottom-0 left-1/2 w-0.5 h-4 bg-gray-800 dark:bg-gray-200 transform -translate-x-1/2 z-0 opacity-50">
+                            </div>
+                            <div
+                                class="absolute bottom-0 left-[20%] w-0.5 h-3 bg-red-800 dark:bg-red-200 transform rotate-[-45deg] z-0 opacity-30">
+                            </div>
+                            <div
+                                class="absolute bottom-0 right-[20%] w-0.5 h-3 bg-red-800 dark:bg-red-200 transform rotate-[45deg] z-0 opacity-30">
+                            </div>
+                        </div>
+
+                        <!-- Painel Digital Flutuante sobre o Meter -->
+                        <div
+                            class="absolute -bottom-8 bg-white dark:bg-dark-element px-8 py-3 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center z-20 transition-transform">
+                            <div class="flex items-start justify-center leading-none">
+                                <span id="tuner-note"
+                                    class="text-7xl font-black tracking-tighter text-gray-900 dark:text-white">-</span>
+                                <span id="tuner-accidental" class="text-4xl font-black text-brand ml-1 mt-1"></span>
+                            </div>
+                            <div id="tuner-cents"
+                                class="text-[11px] uppercase font-black tracking-widest text-gray-400 mt-2 bg-gray-100 dark:bg-dark-bg px-3 py-1 rounded-md">
+                                0 cents</div>
+                        </div>
+                    </div>
+
+                    <!-- Espaçador para o painel flutuante -->
+                    <div class="h-16 w-full"></div>
+
+                    <!-- Barra Digital Suave Horizontal -->
+                    <div class="w-full max-w-md relative mb-12">
+                        <div
+                            class="h-4 bg-gray-100 dark:bg-dark-element rounded-full w-full overflow-hidden shadow-inner border border-gray-200 dark:border-gray-800">
+                            <!-- Marcações na barra -->
+                            <div class="absolute top-0 bottom-0 left-[25%] w-px bg-gray-300 dark:bg-gray-600 z-10">
+                            </div>
+                            <div class="absolute top-0 bottom-0 left-[50%] w-0.5 bg-gray-400 dark:bg-gray-400 z-10">
+                            </div>
+                            <div class="absolute top-0 bottom-0 left-[75%] w-px bg-gray-300 dark:bg-gray-600 z-10">
+                            </div>
+
+                            <!-- Barra preenchida -->
+                            <div id="tuner-digital-bar"
+                                class="absolute top-0 bottom-0 left-1/2 w-0 bg-brand transition-all duration-[50ms] ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                            </div>
+                        </div>
+                        <div
+                            class="flex justify-between mt-2 px-1 text-[10px] font-black uppercase text-gray-400 tracking-wider">
+                            <span>-50</span>
+                            <span class="text-brand">0</span>
+                            <span>+50</span>
+                        </div>
+                    </div>
+
+                    <!-- Mensagem de Ação OBRIGATÓRIA (Aperte/Afrouxe) -->
+                    <div
+                        class="h-20 w-full flex items-center justify-center bg-gray-50 dark:bg-dark-element/30 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 transition-colors">
+                        <div id="tuner-action"
+                            class="text-xl font-bold flex flex-col items-center justify-center gap-1 text-gray-400">
+                            <span>Aguardando sinal claro...</span>
+                        </div>
+                    </div>
+
+                    <!-- Leitura Bruta -->
+                    <div
+                        class="flex justify-center gap-8 mt-6 text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-dark-bg px-6 py-2 rounded-full border border-gray-200 dark:border-gray-800">
+                        <div class="flex items-center gap-2"><i class="fas fa-wave-square text-brand opacity-50"></i>
+                            Atual: <span id="tuner-freq" class="font-bold text-gray-800 dark:text-gray-200">0.0</span>
+                            Hz</div>
+                        <div class="w-px h-4 bg-gray-300 dark:bg-gray-700"></div>
+                        <div class="flex items-center gap-2"><i class="fas fa-bullseye text-blue-500 opacity-50"></i>
+                            Ideal: <span id="tuner-ideal-freq"
+                                class="font-bold text-gray-800 dark:text-gray-200">0.0</span> Hz</div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 VIEW: DETECTOR DE ACORDES & NOTAS (Ouvido Inteligente)
+                 ========================================== -->
+            <section id="view-detector"
+                class="view-section hidden max-w-5xl mx-auto h-full flex flex-col animate-fade-in">
+                <div
+                    class="bg-white dark:bg-dark-surface rounded-[3rem] p-8 md:p-10 shadow-sm flex-1 flex flex-col relative overflow-hidden border border-gray-100 dark:border-gray-800">
+
+                    <div id="detector-init-overlay"
+                        class="absolute inset-0 z-30 bg-white/95 dark:bg-dark-surface/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center transition-all duration-500">
+                        <div
+                            class="w-24 h-24 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-5xl mb-6">
+                            <i class="fas fa-ear-listen animate-pulse"></i>
+                        </div>
+                        <h3 class="text-3xl font-black mb-3">Ouvido Biônico via FFT</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-lg leading-relaxed text-sm">
+                            O sistema
+                            utilizará a Transformada Rápida de Fourier (FFT) para decompor o áudio
+                            real e analisar
+                            harmônicos simultâneos, identificando acordes complexos.</p>
+                        <button id="btn-start-detector"
+                            class="px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xl shadow-[0_10px_30px_-10px_rgba(37,99,235,0.6)] transition-all active:scale-95 flex items-center gap-3">
+                            <i class="fas fa-bolt"></i> Iniciar Processamento
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                        <div>
+                            <h2 class="text-3xl font-black flex items-center gap-3 tracking-tight">
+                                <i class="fas fa-brain text-blue-500"></i> Análise Espectral
+                            </h2>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm mt-2 font-medium">Toque
+                                acordes de forma
+                                limpa. Resultados são enviados ao Braço.</p>
+                        </div>
+
+                        <!-- Seletor de Modo Híbrido -->
+                        <div
+                            class="bg-gray-100 dark:bg-dark-element p-1.5 rounded-2xl flex text-sm font-bold shadow-inner border border-gray-200 dark:border-gray-700 w-full md:w-auto relative">
+                            <div id="detector-mode-indicator"
+                                class="absolute top-1.5 bottom-1.5 bg-white dark:bg-dark-surface rounded-xl shadow transition-all duration-300 pointer-events-none w-[33.33%]">
+                            </div>
+
+                            <button
+                                class="detector-mode-btn active flex-1 md:px-6 py-2.5 rounded-xl transition-colors relative z-10 text-blue-600 dark:text-blue-400"
+                                data-mode="auto">Automático</button>
+                            <button
+                                class="detector-mode-btn flex-1 md:px-6 py-2.5 rounded-xl transition-colors relative z-10 text-gray-500"
+                                data-mode="note">Nota Seca</button>
+                            <button
+                                class="detector-mode-btn flex-1 md:px-6 py-2.5 rounded-xl transition-colors relative z-10 text-gray-500"
+                                data-mode="chord">Acorde (Polifonia)</button>
+                        </div>
+                    </div>
+
+                    <!-- Visualizador FFT Complexo -->
+                    <div
+                        class="relative w-full h-40 mb-10 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-inner bg-gray-900">
+                        <canvas id="detector-spectrum" class="w-full h-full opacity-90"></canvas>
+
+                        <!-- Overlay de Grade para estética Pro -->
+                        <div
+                            class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3Ln3yLn3vZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNykiLz48L3N2Zz4=')] pointer-events-none">
+                        </div>
+                        <div
+                            class="absolute top-2 left-4 text-[10px] text-green-400 font-mono tracking-widest font-bold">
+                            FFT ANALYZER 16384 BINS</div>
+                        <div
+                            class="absolute bottom-2 right-4 text-[10px] text-blue-400 font-mono tracking-widest font-bold">
+                            THRESHOLD > 0.015 RMS</div>
+                    </div>
+
+                    <!-- Area Central de Resultados -->
+                    <div
+                        class="flex-1 flex flex-col items-center justify-center text-center bg-gray-50 dark:bg-dark-element/20 rounded-3xl border border-gray-100 dark:border-gray-800 p-8">
+
+                        <div id="detector-status"
+                            class="text-gray-400 text-xs font-black uppercase tracking-[0.2em] mb-4 animate-pulse flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-gray-400"></div> Escuta Suspensa
+                        </div>
+
+                        <!-- Display Principal Grande -->
+                        <div class="h-40 flex items-center justify-center relative w-full">
+                            <div id="detector-main-result"
+                                class="text-8xl md:text-[160px] font-black text-gray-900 dark:text-white tracking-tighter transition-all duration-300 transform scale-90 opacity-50 drop-shadow-sm">
+                                -</div>
+                            <!-- Efeito de ressonância no fundo -->
+                            <div id="detector-glow"
+                                class="absolute inset-0 bg-blue-500/0 rounded-full blur-3xl transition-all duration-500 -z-10">
+                            </div>
+                        </div>
+
+                        <!-- Barra de Confiança Algorítmica -->
+                        <div class="w-full max-w-sm mt-8 mb-6">
+                            <div
+                                class="flex justify-between text-[11px] uppercase tracking-widest text-gray-500 mb-2 font-black">
+                                <span>Andice de Certeza (Confiança)</span>
+                                <span id="detector-confidence-text"
+                                    class="text-gray-700 dark:text-gray-300 font-mono">0.0%</span>
+                            </div>
+                            <div
+                                class="h-3 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner border border-gray-300 dark:border-gray-700">
+                                <div id="detector-confidence-bar"
+                                    class="h-full bg-blue-500 w-0 transition-all duration-500 ease-out relative">
+                                    <div class="absolute inset-0 bg-white/20"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selos de Notas Extraídas -->
+                        <div class="w-full">
+                            <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-3">
+                                Frequências
+                                Fundamentais Extraídas</div>
+                            <div class="flex flex-wrap justify-center gap-2 min-h-[40px] p-2 bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 inline-flex"
+                                id="detector-notes-badges">
+                                <!-- JS Injeta as Badges Aqui -->
+                                <span
+                                    class="text-xs text-gray-300 dark:text-gray-600 font-medium px-4 py-1 italic">Nenhuma
+                                    nota ativa</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 VIEW: VISUALIZADOR DE BRAÇO COMPLETO
+                 ========================================== -->
+            <section id="view-fretboard"
+                class="view-section hidden max-w-6xl mx-auto h-full flex flex-col animate-fade-in">
+                <div
+                    class="bg-white dark:bg-dark-surface rounded-[3rem] p-8 md:p-12 shadow-sm flex-1 flex flex-col border border-gray-100 dark:border-gray-800">
+
+                    <div class="mb-10">
+                        <h2 class="text-3xl font-black mb-3 flex items-center gap-3 tracking-tight">
+                            <i class="fas fa-grip-lines text-amber-600"></i> Fretboard Master
+                        </h2>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Mapeamento em
+                            tempo real de
+                            notas, escalas e resultados do detector no braço do instrumento.</p>
+                    </div>
+
+                    <!-- Controles de Busca e Filtro -->
+                    <div
+                        class="flex flex-col xl:flex-row gap-4 mb-10 bg-gray-50 dark:bg-dark-element/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+
+                        <div class="flex-1 relative">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-2 pl-1">Digitação
+                                Manual de Estudo</label>
+                            <div class="flex flex-col md:flex-row md:items-center gap-3">
+                                <select id="fb-search-mode"
+                                    class="bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-600 px-4 py-4 rounded-xl font-bold outline-none text-gray-700 dark:text-gray-200 shadow-sm focus:border-amber-500 transition min-w-[200px] cursor-pointer">
+                                    <option value="chord" selected>🎸 Acordes (Shapes)</option>
+                                    <option value="note">🎵 Notas Soltas</option>
+                                </select>
+                                <div class="relative flex-1">
+                                    <i
+                                        class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="fb-note-input" placeholder="Ex: C, Am7, D#..."
+                                        class="w-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-600 pl-12 pr-4 py-4 rounded-xl font-bold outline-none uppercase placeholder:normal-case shadow-sm focus:border-amber-500 transition">
+                                </div>
+                                <button id="btn-fb-search"
+                                    class="bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-xl font-black text-sm shadow-md shadow-amber-600/20 transition-all active:scale-95 flex items-center gap-2">
+                                    Mapear <i class="fas fa-arrow-right hidden md:inline"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="w-full xl:w-auto flex flex-col sm:flex-row items-end gap-3">
+                            <div class="w-full sm:w-64">
+                                <label
+                                    class="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-2 pl-1">Restrição
+                                    de Visão</label>
+                                <div class="relative">
+                                    <select id="fb-filter-select"
+                                        class="w-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-600 px-5 py-4 rounded-xl font-bold outline-none cursor-pointer appearance-none shadow-sm transition hover:border-amber-500 focus:border-amber-500 text-sm">
+                                        <option value="all">Braço Completo (12 Casas)</option>
+                                        <option value="5">Região Iniciante (Casas 0-5)</option>
+                                        <option value="open">Apenas Cordas Soltas</option>
+                                    </select>
+                                    <i
+                                        class="fas fa-filter absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <button id="btn-fb-clear"
+                                class="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-6 py-4 rounded-xl font-black text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                                title="Limpar Braço">
+                                <i class="fas fa-eraser"></i> Limpar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Container Hibrido para Variações de Acordes (Injetado via JS) -->
+                    <div id="chord-shapes-container"
+                        class="hidden mb-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide items-center">
+                        <span
+                            class="text-xs font-bold text-gray-500 uppercase tracking-widest shrink-0 mr-2">Variações:</span>
+                        <!-- Botões de shapes injetados aqui -->
+                    </div>
+
+                    <!-- Representação Visual Realista do Braço (Scroll Horizontal Suave) -->
+                    <div
+                        class="w-full overflow-x-auto pb-6 scrollbar-hide shadow-inner rounded-2xl bg-gray-50 dark:bg-[#0b101a] border border-gray-200 dark:border-gray-800 relative group cursor-ew-resize">
+                        <div
+                            class="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-gray-50 dark:from-[#0b101a] to-transparent z-20 pointer-events-none">
+                        </div>
+                        <div
+                            class="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-gray-50 dark:from-[#0b101a] to-transparent z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <i
+                                class="fas fa-chevron-right text-gray-400 bg-white/50 dark:bg-black/50 p-2 rounded-full backdrop-blur-sm animate-bounce-x"></i>
+                        </div>
+
+                        <div id="fretboard-container"
+                            class="min-w-[900px] md:min-w-full bg-[#3a2318] p-6 rounded-2xl shadow-[inset_0_10px_30px_rgba(0,0,0,0.8)] border-[6px] border-[#25150e] relative flex flex-col gap-0.5 mt-2 mx-4 select-none">
+                            <!-- Gerado via Classe Fretboard -->
+                        </div>
+                    </div>
+
+                    <!-- Detalhamento dos Resultados -->
+                    <div
+                        class="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-t border-gray-100 dark:border-gray-800 pt-6">
+                        <div
+                            class="flex items-center gap-3 bg-brand/10 text-brand px-4 py-2 rounded-lg font-black text-sm inline-flex w-max border border-brand/20">
+                            <i class="fas fa-crosshairs"></i> Ocorrências: <span id="fb-result-count"
+                                class="text-lg">0</span>
+                        </div>
+
+                        <!-- Lista Expandida -->
+                        <div id="fb-results-list" class="flex-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                            <p class="text-gray-400 text-sm font-medium italic my-auto w-full text-center md:text-left">
+                                Faça uma busca ou use o módulo Ouvido para projetar algo aqui.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 MÓDULO NOVO: ESTÚDIO DE GRAVAÇÃO
+                 ========================================== -->
+            <section id="view-studio"
+                class="view-section hidden max-w-6xl mx-auto h-full flex flex-col animate-fade-in">
+                <!-- Header Estúdio -->
+                <div class="flex items-center gap-4 mb-8">
+                    <div
+                        class="w-12 h-12 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center text-xl">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-800 dark:text-white flex items-center gap-3">
+                            Estúdio <span
+                                class="bg-red-500 text-white text-[10px] uppercase font-black px-2 py-0.5 rounded-full tracking-widest animate-pulse">REC</span>
+                        </h2>
+                        <p class="text-gray-500 mt-1">Gravação Multipista: Base & Solo</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
+                    <!-- Esquerda: Container de Vídeo e Status -->
+                    <div
+                        class="bg-gray-900 dark:bg-black rounded-[2rem] p-4 flex flex-col shadow-xl relative overflow-hidden border border-gray-800">
+                        <div class="absolute top-6 left-6 z-20 flex gap-2" id="studio-badges">
+                            <!-- Injetado JS -->
+                        </div>
+
+                        <!-- Câmera/Preview -->
+                        <div
+                            class="flex-1 bg-gray-800 rounded-2xl relative overflow-hidden flex items-center justify-center">
+                            <video id="studio-base-video" class="absolute w-full h-full object-cover hidden"
+                                playsinline></video>
+                            <video id="studio-camera-video" class="w-full h-full object-cover transform scale-x-[-1]"
+                                autoplay playsinline muted></video>
+                            <div id="studio-start-prompt"
+                                class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-4 backdrop-blur-sm z-10 transition-opacity">
+
+                                <div
+                                    class="bg-gray-900/80 p-4 rounded-2xl flex flex-col gap-3 items-center mb-4 border border-gray-700">
+                                    <label class="text-white font-bold text-sm"><i class="fas fa-video"></i> Orientação
+                                        do Vídeo</label>
+                                    <div class="flex gap-2">
+                                        <button
+                                            class="btn-orientation active px-4 py-2 rounded-lg bg-purple-600 text-white font-bold text-xs"
+                                            data-val="horizontal">Deitado</button>
+                                        <button
+                                            class="btn-orientation px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-xs"
+                                            data-val="vertical">Em Pé</button>
+                                    </div>
+                                    <input type="hidden" id="studio-video-orientation" value="horizontal">
+                                </div>
+
+                                <button id="btn-studio-start"
+                                    class="w-20 h-20 bg-purple-600 hover:bg-purple-500 text-white rounded-full flex items-center justify-center text-2xl shadow-[0_0_30px_rgba(147,51,234,0.5)] transition-all active:scale-95 duration-300">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                                <span class="text-gray-300 font-bold tracking-wide">Iniciar Estúdio</span>
+                                <span class="text-xs text-brand max-w-xs text-center">É necessário fones de ouvido para
+                                    evitar vazamento do auto-falante na gravação.</span>
+                            </div>
+                        </div>
+
+                        <!-- Timeline e Record Controls -->
+                        <div class="mt-4 bg-gray-800/50 rounded-2xl p-4 flex items-center justify-between pointer-events-none opacity-50 transition-opacity duration-300"
+                            id="studio-controls-bar">
+                            <span id="studio-timer" class="font-mono font-black text-white text-xl w-20">00:00</span>
+
+                            <div class="flex bg-gray-900 rounded-full p-1" id="studio-action-container">
+                                <button id="btn-record-base"
+                                    class="px-6 py-2 rounded-full font-bold text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2 relative">
+                                    <div class="w-2 h-2 rounded-full bg-red-500"></div> Base
+                                </button>
+                                <button id="btn-record-solo"
+                                    class="px-6 py-2 rounded-full font-bold text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2 cursor-not-allowed">
+                                    <div class="w-2 h-2 rounded-full bg-orange-500"></div> Solo
+                                </button>
+                            </div>
+
+                            <button id="btn-studio-stop"
+                                class="w-10 h-10 bg-gray-700 hover:bg-red-500 text-white rounded-xl flex items-center justify-center transition-colors pointer-events-none disabled"
+                                disabled>
+                                <i class="fas fa-stop"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Direita: Mixagem e Exportação -->
+                    <div
+                        class="bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm flex flex-col border border-gray-100 dark:border-gray-800">
+                        <h3 class="text-xl font-black mb-6 flex items-center gap-2"><i
+                                class="fas fa-sliders-h text-purple-500"></i> Mixagem</h3>
+
+                        <div class="flex-1 flex flex-col gap-6 justify-center opacity-50 pointer-events-none transition-opacity duration-300"
+                            id="studio-mixer">
+                            <!-- Pista 1 (Base) -->
+                            <div
+                                class="bg-gray-50 dark:bg-dark-element p-4 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col gap-4 relative">
+                                <div
+                                    class="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-12 bg-red-500/50 rounded-full">
+                                </div>
+                                <div class="flex justify-between items-center px-2">
+                                    <span class="font-bold text-sm text-gray-700 dark:text-gray-200"><i
+                                            class="fas fa-guitar text-gray-400 mr-2"></i>Faixa 1: Base</span>
+                                    <div class="flex items-center gap-2">
+                                        <button id="btn-trash-base"
+                                            class="hidden text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Apagar Faixa"><i class="fas fa-trash-alt"></i></button>
+                                        <span
+                                            class="text-xs font-mono font-bold text-brand bg-brand/10 px-2 py-1 rounded-md"
+                                            id="status-track-base">Vazia</span>
+                                    </div>
+                                </div>
+                                <input type="range" id="vol-base" min="0" max="2" step="0.05" value="1"
+                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                            </div>
+
+                            <!-- Pista 2 (Solo) -->
+                            <div
+                                class="bg-gray-50 dark:bg-dark-element p-4 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col gap-4 relative">
+                                <div
+                                    class="absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-12 bg-orange-500/50 rounded-full">
+                                </div>
+                                <div class="flex justify-between items-center px-2">
+                                    <span class="font-bold text-sm text-gray-700 dark:text-gray-200"><i
+                                            class="fas fa-microphone text-gray-400 mr-2"></i>Faixa 2: Solo
+                                        (Overdub)</span>
+
+                                    <div class="flex items-center gap-2">
+                                        <button id="btn-trash-solo"
+                                            class="hidden text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Apagar Faixa"><i class="fas fa-trash-alt"></i></button>
+                                        <span
+                                            class="text-xs font-mono font-bold text-brand bg-brand/10 px-2 py-1 rounded-md"
+                                            id="status-track-solo">Vazia</span>
+                                    </div>
+                                </div>
+                                <input type="range" id="vol-solo" min="0" max="2" step="0.05" value="1"
+                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex flex-col gap-3">
+                            <button id="btn-studio-preview"
+                                class="w-full py-4 rounded-xl font-bold bg-gray-100 dark:bg-dark-element text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 pointer-events-none"
+                                disabled>
+                                <i class="fas fa-play"></i> Ouvir Mixagem
+                            </button>
+                            <button id="btn-studio-export"
+                                class="w-full py-4 rounded-xl font-black bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 pointer-events-none"
+                                disabled>
+                                <i class="fas fa-file-export"></i> Gerar Versão Final
+                            </button>
+                            <!-- Vídeo final e link de download ocultos -->
+                            <a id="studio-download-link" class="hidden"></a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 MÓDULO NOVO: CAMPO HARMÔNICO & ESCALAS
+                 ========================================== -->
+            <section id="view-harmony"
+                class="view-section hidden max-w-5xl mx-auto h-full flex flex-col animate-fade-in">
+                <div
+                    class="bg-white dark:bg-dark-surface rounded-[3rem] p-8 md:p-12 shadow-sm flex-1 flex flex-col border border-gray-100 dark:border-gray-800 relative overflow-hidden">
+
+                    <div
+                        class="absolute -right-20 -top-20 text-gray-50 dark:text-gray-800/50 text-[300px] pointer-events-none rotate-12">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+
+                    <div class="relative z-10 mb-10">
+                        <h2 class="text-3xl font-black mb-3 flex items-center gap-3 tracking-tight">
+                            <i class="fas fa-project-diagram text-purple-500"></i> Teoria & Harmonia
+                        </h2>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Gere campos
+                            harmônicos
+                            instantaneamente e estude as relações diatônicas.</p>
+                    </div>
+
+                    <!-- Controles Geradores -->
+                    <div
+                        class="flex flex-col md:flex-row gap-4 mb-10 bg-gray-50 dark:bg-dark-element/30 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 relative z-10">
+                        <div class="flex-1">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-2 pl-1">Tom
+                                Fundamental</label>
+                            <select id="harm-root"
+                                class="w-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-600 px-5 py-4 rounded-xl font-bold text-lg outline-none cursor-pointer shadow-sm transition hover:border-purple-500">
+                                <option value="C">C (Dó)</option>
+                                <option value="C#">C# / Db</option>
+                                <option value="D">D (Ré)</option>
+                                <option value="D#">D# / Eb</option>
+                                <option value="E">E (Mi)</option>
+                                <option value="F">F (Fá)</option>
+                                <option value="F#">F# / Gb</option>
+                                <option value="G">G (Sol)</option>
+                                <option value="G#">G# / Ab</option>
+                                <option value="A" selected>A (Lá)</option>
+                                <option value="A#">A# / Bb</option>
+                                <option value="B">B (Si)</option>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-2 pl-1">Estrutura
+                                (Modo)</label>
+                            <select id="harm-scale"
+                                class="w-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-600 px-5 py-4 rounded-xl font-bold text-lg outline-none cursor-pointer shadow-sm transition hover:border-purple-500">
+                                <option value="major" selected>Maior Natural (Jônio)</option>
+                                <option value="minor">Menor Natural (Eólio)</option>
+                                <option value="harmonic_minor">Menor Harmônica</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button id="btn-generate-harmony"
+                                class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-black text-sm shadow-lg shadow-purple-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 h-[58px]">
+                                <i class="fas fa-magic"></i> Gerar Relatório
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Resultado: Notas da Escala -->
+                    <div class="mb-8 relative z-10 hidden" id="harm-scale-result">
+                        <h4 class="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-4">
+                            Notas que
+                            compõem a escala</h4>
+                        <div class="flex flex-wrap gap-2 md:gap-4" id="harm-scale-badges">
+                            <!-- Injetado -->
+                        </div>
+                    </div>
+
+                    <!-- Resultado: Tabela de Acordes Diatônicos -->
+                    <div class="flex-1 relative z-10 hidden flex flex-col" id="harm-chords-result">
+                        <h4
+                            class="text-[11px] text-gray-500 uppercase font-black tracking-widest mb-4 flex justify-between items-end">
+                            <span>Acordes do Campo Harmônico</span>
+                            <button id="btn-harm-to-fret"
+                                class="text-purple-500 hover:text-purple-700 bg-purple-500/10 px-3 py-1 rounded-md transition-colors normal-case">Projetar
+                                Escala no Braço <i class="fas fa-external-link-alt ml-1 text-[10px]"></i></button>
+                        </h4>
+
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-y-auto pr-2 pb-4 scrollbar-hide">
+                            <!-- Injetado (Cards Grandes) -->
+                            <div class="col-span-full text-center text-gray-400 py-10 italic">Clique em
+                                gerar para
+                                calcular.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 MÓDULO NOVO: TREINADOR DE OUVIDO (PERFECT PITCH)
+                 ========================================== -->
+            <section id="view-eartrainer"
+                class="view-section hidden max-w-4xl mx-auto h-full flex flex-col animate-fade-in">
+                <div
+                    class="bg-white dark:bg-dark-surface rounded-[3rem] p-8 md:p-12 shadow-sm flex-1 flex flex-col border border-gray-100 dark:border-gray-800 relative text-center items-center justify-center">
+
+                    <div class="mb-8">
+                        <div
+                            class="w-20 h-20 bg-indigo-500/10 text-indigo-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
+                            <i class="fas fa-assistive-listening-systems"></i>
+                        </div>
+                        <h2 class="text-3xl font-black mb-2 tracking-tight">Treinador de Ouvido Relativo
+                        </h2>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm font-medium max-w-md mx-auto">
+                            Desenvolva sua
+                            percepção auditiva identificando intervalos e acordes apenas escutando.
+                        </p>
+                    </div>
+
+                    <!-- Status Bar Game -->
+                    <div
+                        class="w-full max-w-lg bg-gray-50 dark:bg-dark-element/50 rounded-2xl p-4 flex justify-between items-center mb-8 border border-gray-100 dark:border-gray-800">
+                        <div class="flex flex-col text-left">
+                            <span class="text-[10px] uppercase font-black text-gray-400 tracking-widest">Nível
+                                Atual</span>
+                            <span class="font-bold text-indigo-500">Iniciante (Notas Únicas)</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="flex flex-col text-center">
+                                <span
+                                    class="text-[10px] uppercase font-black text-green-500 tracking-widest">Acertos</span>
+                                <span id="ear-score-correct" class="font-black text-xl">0</span>
+                            </div>
+                            <div class="w-px bg-gray-200 dark:bg-gray-700"></div>
+                            <div class="flex flex-col text-center">
+                                <span class="text-[10px] uppercase font-black text-red-500 tracking-widest">Erros</span>
+                                <span id="ear-score-wrong" class="font-black text-xl">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Area de Jogo Ativo -->
+                    <div
+                        class="w-full max-w-lg bg-white dark:bg-dark-bg p-8 rounded-[2rem] shadow-lg border border-gray-100 dark:border-gray-700 relative">
+
+                        <button id="btn-ear-play"
+                            class="w-24 h-24 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center text-3xl mx-auto mb-8 shadow-lg shadow-indigo-600/30 transition-all active:scale-90 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity">
+                            </div>
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+
+                        <div id="ear-question-text"
+                            class="text-sm font-bold text-gray-500 mb-6 uppercase tracking-wider">Qual
+                            nota você acabou
+                            de ouvir?</div>
+
+                        <div class="grid grid-cols-2 gap-3" id="ear-options-container">
+                            <!-- Gerado dinamicamente -->
+                            <button
+                                class="bg-gray-100 dark:bg-dark-element p-4 rounded-xl font-black text-lg text-gray-400 border border-transparent">?</button>
+                            <button
+                                class="bg-gray-100 dark:bg-dark-element p-4 rounded-xl font-black text-lg text-gray-400 border border-transparent">?</button>
+                            <button
+                                class="bg-gray-100 dark:bg-dark-element p-4 rounded-xl font-black text-lg text-gray-400 border border-transparent">?</button>
+                            <button
+                                class="bg-gray-100 dark:bg-dark-element p-4 rounded-xl font-black text-lg text-gray-400 border border-transparent">?</button>
+                        </div>
+
+                        <!-- Overlay Feedback -->
+                        <div id="ear-feedback"
+                            class="absolute inset-0 bg-white/95 dark:bg-dark-bg/95 backdrop-blur rounded-[2rem] flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-300 z-10 border-4 border-transparent">
+                            <div id="ear-feedback-icon" class="text-6xl mb-4"></div>
+                            <h3 id="ear-feedback-title" class="text-2xl font-black mb-1"></h3>
+                            <p id="ear-feedback-desc" class="text-gray-500 text-sm mb-6"></p>
+                            <button id="btn-ear-next"
+                                class="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold transition-transform active:scale-95 shadow-lg">Próximo
+                                Desafio</button>
+                        </div>
+                    </div>
+
+                    <button id="btn-ear-start"
+                        class="mt-8 px-8 py-3 bg-gray-100 dark:bg-dark-element text-gray-600 dark:text-gray-300 font-bold rounded-xl transition hover:bg-gray-200 hover:text-indigo-500">
+                        <i class="fas fa-flag-checkered mr-2"></i> Iniciar Treinamento
+                    </button>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 VIEW: PAINEL DE ESTATASTICAS E BACKUP
+                 ========================================== -->
+            <section id="view-dashboard"
+                class="view-section hidden max-w-6xl mx-auto h-full flex flex-col animate-fade-in">
+
+                <!-- Cabeçalho Dashboard -->
+                <div
+                    class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 bg-white dark:bg-dark-surface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div>
+                        <h2 class="text-3xl font-black flex items-center gap-3">
+                            <i class="fas fa-chart-line text-brand"></i> Centro de Comando
+                        </h2>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Acompanhe seu
+                            rendimento musical e
+                            metas cadastradas.</p>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button id="btn-export-backup"
+                            class="px-4 py-2 rounded-xl text-sm font-bold bg-gray-100 dark:bg-dark-element hover:bg-blue-500 hover:text-white text-gray-600 dark:text-gray-300 transition-colors flex items-center gap-2 border border-gray-200 dark:border-gray-700">
+                            <i class="fas fa-file-export"></i> Backup (JSON)
+                        </button>
+                        <button id="btn-reset-progress"
+                            class="px-4 py-2 rounded-xl text-sm font-bold bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center gap-2 border border-red-100 dark:border-red-900/50">
+                            <i class="fas fa-trash-alt"></i> Excluir Dados
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cards de Métricas Principais -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+                    <!-- Tempo Hoje -->
+                    <div
+                        class="bg-white dark:bg-dark-surface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
+                        <div
+                            class="absolute -right-4 -top-4 w-20 h-20 bg-brand/5 rounded-full group-hover:scale-150 transition-transform duration-500">
+                        </div>
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-brand/10 text-brand flex items-center justify-center text-xl mb-4">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <p class="text-[11px] text-gray-500 uppercase font-black tracking-widest">
+                            Sessão de Hoje</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <p class="text-4xl font-black text-gray-800 dark:text-white" id="stat-time-today">0</p>
+                            <span class="text-sm font-bold text-gray-400">min</span>
+                        </div>
+                    </div>
+
+                    <!-- Ofensiva -->
+                    <div
+                        class="bg-white dark:bg-dark-surface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
+                        <div
+                            class="absolute -right-4 -top-4 w-20 h-20 bg-orange-500/5 rounded-full group-hover:scale-150 transition-transform duration-500">
+                        </div>
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center text-xl mb-4">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <p class="text-[11px] text-gray-500 uppercase font-black tracking-widest">
+                            Ofensiva Atual</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <p class="text-4xl font-black text-gray-800 dark:text-white" id="stat-streak">0</p>
+                            <span class="text-sm font-bold text-gray-400">dias</span>
+                        </div>
+                    </div>
+
+                    <!-- Tempo Total -->
+                    <div
+                        class="bg-white dark:bg-dark-surface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
+                        <div
+                            class="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-500">
+                        </div>
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center text-xl mb-4">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <p class="text-[11px] text-gray-500 uppercase font-black tracking-widest">
+                            Investimento Total</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <p class="text-4xl font-black text-gray-800 dark:text-white" id="stat-time-total-h">0</p>
+                            <span class="text-sm font-bold text-gray-400">h</span>
+                            <p class="text-4xl font-black text-gray-800 dark:text-white ml-2" id="stat-time-total-m">0
+                            </p>
+                            <span class="text-sm font-bold text-gray-400">m</span>
+                        </div>
+                    </div>
+
+                    <!-- BPM Maximo -->
+                    <div
+                        class="bg-white dark:bg-dark-surface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden group">
+                        <div
+                            class="absolute -right-4 -top-4 w-20 h-20 bg-purple-500/5 rounded-full group-hover:scale-150 transition-transform duration-500">
+                        </div>
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center text-xl mb-4">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <p class="text-[11px] text-gray-500 uppercase font-black tracking-widest">BPM
+                            Máximo Tocado</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <p class="text-4xl font-black text-gray-800 dark:text-white" id="stat-bpm-max">120</p>
+                            <span class="text-sm font-bold text-gray-400">bpm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 flex-1">
+                    <!-- Gráfico Principal -->
+                    <div
+                        class="lg:col-span-2 bg-white dark:bg-dark-surface p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col">
+                        <h3
+                            class="font-black text-xl text-gray-800 dark:text-white mb-6 flex justify-between items-center">
+                            Histórico de Dedicação (7 Dias)
+                            <span
+                                class="text-xs bg-gray-100 dark:bg-dark-element px-3 py-1 rounded-md text-gray-400 font-bold uppercase tracking-wider">Métrica
+                                de Volume</span>
+                        </h3>
+                        <div class="relative flex-1 min-h-[250px] w-full">
+                            <canvas id="practiceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Sistema de Conquistas (Gamification) -->
+                    <div
+                        class="bg-white dark:bg-dark-surface p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col">
+                        <h3 class="font-black text-xl text-gray-800 dark:text-white mb-6 flex gap-2 items-center">
+                            <i class="fas fa-medal text-yellow-500"></i> Troféus
+                        </h3>
+
+                        <div class="space-y-4 overflow-y-auto pr-2 scrollbar-hide flex-1" id="achievements-list">
+                            <!-- Conquista 1 -->
+                            <div
+                                class="flex items-center gap-4 bg-gray-50 dark:bg-dark-element/30 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 opacity-50 grayscale">
+                                <div
+                                    class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 line-through">
+                                        Iniciação</h4>
+                                    <p class="text-xs text-gray-400 leading-tight mt-0.5">Estude por 3
+                                        dias seguidos.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Conquista 2 -->
+                            <div
+                                class="flex items-center gap-4 bg-gray-50 dark:bg-dark-element/30 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 opacity-50 grayscale">
+                                <div
+                                    class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                                    <i class="fas fa-stopwatch"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 line-through">
+                                        Metrônomo Humano</h4>
+                                    <p class="text-xs text-gray-400 leading-tight mt-0.5">Acumule 5
+                                        horas usando click.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Conquista 3 -->
+                            <div
+                                class="flex items-center gap-4 bg-gray-50 dark:bg-dark-element/30 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 opacity-50 grayscale">
+                                <div
+                                    class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                                    <i class="fas fa-ear-listen"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 line-through">
+                                        Ouvido
+                                        Absoluto</h4>
+                                    <p class="text-xs text-gray-400 leading-tight mt-0.5">Acerte 20
+                                        notas seguidas no
+                                        treino.</p>
+                                </div>
+                            </div>
+
+                            <p class="text-center text-xs text-gray-400 mt-4 italic font-medium">As
+                                conquistas são
+                                desbloqueadas automaticamente durante seu estudo.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 VIEW: EXTRAS E FERRAMENTAS
+                 ========================================== -->
+            <section id="view-extras"
+                class="view-section hidden max-w-6xl mx-auto h-full flex flex-col animate-fade-in">
+
+                <div class="mb-8">
+                    <h2 class="text-3xl font-black flex items-center gap-3">
+                        <i class="fas fa-toolbox text-brand"></i> Caixa de Ferramentas
+                    </h2>
+                    <p class="text-gray-500 text-sm mt-1 font-medium">Utilitários adicionais para
+                        aprofundar sua prática
+                        diária.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                    <!-- Modo Igreja / Worship -->
+                    <div
+                        class="bg-gradient-to-br from-[#1a1025] to-[#2d1b4e] p-8 rounded-[2rem] shadow-lg flex flex-col text-white relative overflow-hidden border border-purple-500/20 group">
+                        <div
+                            class="absolute -right-10 -bottom-10 text-[150px] opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                            <i class="fas fa-church"></i>
+                        </div>
+
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl mb-6 backdrop-blur-sm border border-white/10">
+                            <i class="fas fa-cross text-purple-300"></i>
+                        </div>
+
+                        <h3 class="font-black text-2xl mb-2">Modo Worship</h3>
+                        <p class="text-purple-200 text-sm mb-8 font-medium leading-relaxed">Configura
+                            automaticamente o
+                            ambiente para prática de repertório de igreja. Ativa cores escuras
+                            profundas, define
+                            metrônomo para pads suaves em ~70bpm.</p>
+
+                        <div class="mt-auto">
+                            <button id="btn-mode-worship"
+                                class="w-full bg-purple-500 hover:bg-purple-400 text-white font-bold py-4 rounded-xl transition-all shadow-[0_5px_20px_rgba(139,92,246,0.3)] active:scale-95 flex justify-center items-center gap-2">
+                                <i class="fas fa-power-off"></i> Ativar Ambiente
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Drone Tone Generator -->
+                    <div
+                        class="bg-white dark:bg-dark-surface p-8 rounded-[2rem] shadow-sm flex flex-col border border-gray-100 dark:border-gray-800">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-brand flex items-center justify-center text-2xl mb-6">
+                            <i class="fas fa-wave-square"></i>
+                        </div>
+                        <h3 class="font-black text-2xl mb-2">Drone Tone (Nota Pedal)</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-8 font-medium leading-relaxed">
+                            Excelente
+                            para praticar intonação, afinação de voz e improvisação modal mantendo
+                            um fundo contínuo.
+                        </p>
+
+                        <div
+                            class="flex gap-4 items-center w-full mb-6 bg-gray-50 dark:bg-dark-element/30 p-2 rounded-2xl border border-gray-100 dark:border-gray-700">
+                            <select id="drone-note"
+                                class="flex-1 bg-white dark:bg-dark-surface p-4 rounded-xl border border-gray-200 dark:border-gray-600 outline-none font-bold text-center text-lg hover:border-brand transition-colors appearance-none">
+                                <option value="C">C (Dó)</option>
+                                <option value="C#">C# / Db</option>
+                                <option value="D">D (Ré)</option>
+                                <option value="D#">D# / Eb</option>
+                                <option value="E" selected>E (Mi)</option>
+                                <option value="F">F (Fá)</option>
+                                <option value="F#">F# / Gb</option>
+                                <option value="G">G (Sol)</option>
+                                <option value="G#">G# / Ab</option>
+                                <option value="A">A (Lá)</option>
+                                <option value="A#">A# / Bb</option>
+                                <option value="B">B (Si)</option>
+                            </select>
+                            <select id="drone-octave"
+                                class="w-24 bg-white dark:bg-dark-surface p-4 rounded-xl border border-gray-200 dark:border-gray-600 outline-none font-bold text-center text-lg hover:border-brand transition-colors appearance-none">
+                                <option value="2">Oit. 2</option>
+                                <option value="3" selected>Oit. 3</option>
+                                <option value="4">Oit. 4</option>
+                            </select>
+                        </div>
+
+                        <label
+                            class="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-2 pl-1">Volume
+                            do Drone</label>
+                        <input type="range" id="drone-volume" min="0" max="100" value="50" class="w-full mb-8">
+
+                        <button id="btn-drone-play"
+                            class="w-full mt-auto px-8 py-4 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2">
+                            <i class="fas fa-play"></i> Ligar Som Constante
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 VIEW: PROFESSOR / MENTOR MUSICAL
+                 ========================================== -->
+            <section id="view-professor"
+                class="view-section hidden max-w-4xl mx-auto h-full flex flex-col animate-fade-in relative">
+                <!-- Header -->
+                <div class="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-800 dark:text-white flex items-center gap-3">
+                            <i class="fas fa-chalkboard-teacher text-brand"></i> Mentor
+                        </h2>
+                        <p class="text-sm text-gray-500 font-medium mt-1">Seu professor particular de Teoria e Prática
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Painel de Controles Flexível e Glass -->
+                <div
+                    class="bg-white dark:bg-dark-surface rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+                        <!-- Tom -->
+                        <div class="flex flex-col">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-2 pl-1">Tom</label>
+                            <select id="prof-key"
+                                class="bg-gray-50 dark:bg-dark-element border border-gray-200 dark:border-gray-700 outline-none font-bold text-center appearance-none px-4 py-3 rounded-xl transition">
+                                <option value="C" selected>C (Dó)</option>
+                                <option value="C#">C# / Db</option>
+                                <option value="D">D (Ré)</option>
+                                <option value="Eb">D# / Eb</option>
+                                <option value="E">E (Mi)</option>
+                                <option value="F">F (Fá)</option>
+                                <option value="F#">F# / Gb</option>
+                                <option value="G">G (Sol)</option>
+                                <option value="Ab">G# / Ab</option>
+                                <option value="A">A (Lá)</option>
+                                <option value="Bb">A# / Bb</option>
+                                <option value="B">B (Si)</option>
+                            </select>
+                        </div>
+
+                        <!-- Estilo -->
+                        <div class="flex flex-col">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-2 pl-1">Estilo</label>
+                            <select id="prof-style"
+                                class="bg-gray-50 dark:bg-dark-element border border-gray-200 dark:border-gray-700 outline-none font-bold text-center appearance-none px-4 py-3 rounded-xl transition">
+                                <option value="gospel" selected>Gospel / Worship</option>
+                                <option value="rock">Rock</option>
+                                <option value="blues">Blues</option>
+                                <option value="pop">Pop</option>
+                                <option value="jazz">Jazz / Bossa</option>
+                            </select>
+                        </div>
+
+                        <!-- Nível -->
+                        <div class="flex flex-col">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-2 pl-1">Nível</label>
+                            <select id="prof-level"
+                                class="bg-gray-50 dark:bg-dark-element border border-gray-200 dark:border-gray-700 outline-none font-bold text-center appearance-none px-4 py-3 rounded-xl transition">
+                                <option value="iniciante" selected>Iniciante</option>
+                                <option value="intermediario">Intermediário</option>
+                                <option value="avancado">Avançado</option>
+                            </select>
+                        </div>
+
+                        <!-- Tipo de Estudo -->
+                        <div class="flex flex-col">
+                            <label
+                                class="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-2 pl-1">Assunto</label>
+                            <select id="prof-topic"
+                                class="bg-gray-50 dark:bg-dark-element border border-gray-200 dark:border-gray-700 outline-none font-bold text-center appearance-none px-4 py-3 rounded-xl transition">
+                                <option value="campo-maior" selected>Campo Maior</option>
+                                <option value="campo-menor">Campo Menor</option>
+                                <option value="escala-maior">Escala Maior</option>
+                                <option value="escala-menor">Esc. Menor Nat.</option>
+                                <option value="penta-maior">Penta Maior</option>
+                                <option value="penta-menor">Penta Menor</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <button id="btn-prof-generate"
+                        onclick="if(window.ProfessorApp) window.ProfessorApp.generateLesson()"
+                        class="w-full mt-6 bg-brand hover:bg-brand-dark text-white active:scale-95 font-bold py-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                        <i class="fas fa-magic"></i> Gerar Aula Prática
+                    </button>
+                </div>
+
+                <!-- Área de Resposta do Professor -->
+                <div id="prof-result-container"
+                    class="hidden flex-1 overflow-y-auto scrollbar-hide bg-white dark:bg-dark-surface rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 relative animate-fade-in-up">
+                    <div id="prof-result-content"
+                        class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                        <!-- Conteúdo injetado via JS -->
+                    </div>
+                </div>
+
+                <!-- Estado Vazio / Inicial -->
+                <div id="prof-empty-state"
+                    class="flex-1 flex flex-col items-center justify-center text-center opacity-50 p-8">
+                    <div class="w-24 h-24 mb-4 rounded-full bg-brand/10 flex items-center justify-center">
+                        <i class="fas fa-book-reader text-4xl text-brand"></i>
+                    </div>
+                    <p class="font-medium text-lg">Configure sua aula acima e clique em Gerar.</p>
+                    <p class="text-sm">Aprenda teoria aplicada à prática rapidamente.</p>
+                </div>
+
+            </section>
+
+            <!-- ==========================================
+                 VIEW: SOBRE E APOIO (MONETIZAÇñO/PROFISSIONALISMO)
+                 ========================================== -->
+            <section id="view-about" class="view-section hidden max-w-4xl mx-auto h-full flex flex-col animate-fade-in">
+                <div
+                    class="bg-white dark:bg-dark-surface rounded-[3rem] p-8 md:p-14 shadow-sm flex-1 overflow-y-auto scrollbar-hide border border-gray-100 dark:border-gray-800 relative">
+
+                    <div class="text-center mb-12">
+                        <div
+                            class="w-32 h-32 bg-brand text-white rounded-full flex items-center justify-center text-6xl mx-auto mb-6 shadow-2xl shadow-brand/40 border-4 border-white dark:border-dark-surface">
+                            <i class="fas fa-compact-disc animate-spin-slow"></i>
+                        </div>
+                        <h2 class="text-5xl font-black mb-2 tracking-tighter">Maestro Pro</h2>
+                        <p class="text-brand uppercase tracking-[0.3em] text-xs font-black">Metrônomo &
+                            Afinador</p>
+                    </div>
+
+                    <div
+                        class="prose dark:prose-invert max-w-2xl mx-auto text-gray-600 dark:text-gray-300 text-center md:text-left text-lg font-medium leading-relaxed mb-12">
+                        <p class="mb-6">
+                            O Maestro Pro é uma ferramenta completa para músicos que desejam evoluir
+                            no ritmo, afinação
+                            e conhecimento do braço do violão.
+                        </p>
+
+                        <p class="mb-6">
+                            Desenvolvido com foco em estudo musical estruturado, o aplicativo reúne:
+                        </p>
+
+                        <div
+                            class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left bg-gray-50 dark:bg-dark-element/30 p-8 rounded-3xl mb-8 border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-start gap-3">
+                                <div
+                                    class="mt-1 w-5 h-5 rounded-full bg-brand/20 text-brand flex items-center justify-center text-[10px]">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div>Metrônomo profissional</div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div
+                                    class="mt-1 w-5 h-5 rounded-full bg-brand/20 text-brand flex items-center justify-center text-[10px]">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div>Afinador com alta precisão</div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div
+                                    class="mt-1 w-5 h-5 rounded-full bg-brand/20 text-brand flex items-center justify-center text-[10px]">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div>Detector de notas e acordes</div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div
+                                    class="mt-1 w-5 h-5 rounded-full bg-brand/20 text-brand flex items-center justify-center text-[10px]">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div>Visualizador no braço do violão</div>
+                            </div>
+                            <div class="flex items-start gap-3 sm:col-span-2">
+                                <div
+                                    class="mt-1 w-5 h-5 rounded-full bg-brand/20 text-brand flex items-center justify-center text-[10px]">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div>Area de treino com estatísticas</div>
+                            </div>
+                        </div>
+
+                        <p class="text-sm text-center text-gray-500 dark:text-gray-400">
+                            Nosso objetivo é ajudar músicos iniciantes, intermediários e avançados a
+                            estudarem de forma
+                            mais eficiente.
+                        </p>
+                    </div>
+
+                    <div class="w-full h-px bg-gray-200 dark:bg-gray-700 mb-12"></div>
+
+                    <!-- Area de Apoio ao Desenvolvimento (PIX) -->
+                    <!-- A rea de Apoio ao Desenvolvimento (PIX) -->
+                    <div
+                        class="mt-12 relative overflow-hidden rounded-[2rem] p-8 md:p-10 border border-brand/20 dark:border-brand/10 bg-gradient-to-br from-brand/5 to-transparent dark:from-brand/10 dark:to-transparent backdrop-blur-sm text-center transition-all animate-fade-in-up">
+
+                        <!-- Ícone e Título -->
+                        <div class="flex flex-col items-center justify-center gap-4 mb-5 relative z-10">
+                            <div
+                                class="w-14 h-14 bg-white dark:bg-dark-surface rounded-2xl shadow-sm flex items-center justify-center border border-brand/20 dark:border-brand/30 transform rotate-3 hover:rotate-0 transition-transform">
+                                <i class="fas fa-hand-holding-heart text-brand text-2xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
+                                💚 Apoie o desenvolvimento
+                            </h3>
+                        </div>
+
+                        <!-- Descrição -->
+                        <p
+                            class="text-sm text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto relative z-10 leading-relaxed font-medium">
+                            Se o Maestro Pro está ajudando você a evoluir musicalmente, considere apoiar o projeto. Sua
+                            contribuição ajuda a manter o aplicativo gratuito e em constante melhoria.
+                        </p>
+
+                        <!-- Área do PIX -->
+                        <div class="max-w-md mx-auto relative z-10 flex flex-col gap-3">
+                            <div
+                                class="flex items-center justify-center gap-3 bg-white dark:bg-dark-surface py-4 px-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                                <i class="fab fa-pix text-brand text-xl"></i>
+                                <span
+                                    class="font-mono font-bold text-gray-800 dark:text-gray-200 text-sm sm:text-base break-words">
+                                    rendersonluan@gmail.com
+                                </span>
+                            </div>
+
+                            <button id="btn-copy-pix"
+                                class="w-full bg-brand hover:bg-brand-dark text-white active:scale-95 font-bold py-4 px-6 rounded-2xl transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.23)] hover:-translate-y-1 flex items-center justify-center gap-3 group">
+                                <i class="fas fa-copy group-hover:scale-110 transition-transform"></i>
+                                Copiar chave PIX
+                            </button>
+                        </div>
+
+                        <!-- Mensagem Extra -->
+                        <p class="mt-6 text-xs text-brand font-medium tracking-wide uppercase relative z-10">
+                            Obrigado por apoiar o Maestro Pro 🎵
+                        </p>
+                    </div>
+
+                    <!-- Espaçamento extra no bloco final para garantir rolagem completa -->
+                    <div class="h-8 md:h-12 w-full"></div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+
+
+    <!-- Arquivos da Lógica Core do App -->
+    <script src="js/core.js"></script>
+    <script src="js/piano.js"></script>
+    <script src="./js/professor.js"></script>
+    <script src="js/chords.js"></script>
+    <script src="js/chords.js"></script>
+    <script src="js/studio.js"></script>
+    <script src="./js/app.js" type="module"></script>
+    <script src="./js/app.js" type="module"></script>
+    <script src="./js/pwa.js" defer></script>
+</body>
+
+</html>
