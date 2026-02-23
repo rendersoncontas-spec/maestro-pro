@@ -1202,8 +1202,17 @@
                                             id="status-track-base">Vazia</span>
                                     </div>
                                 </div>
-                                <input type="range" id="vol-base" min="0" max="2" step="0.05" value="1"
-                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                                <div class="w-full flex flex-col gap-1">
+                                    <div class="flex justify-between items-center px-1">
+                                        <span id="time-current-base"
+                                            class="text-[10px] font-mono text-gray-500">00:00.000</span>
+                                        <span id="time-total-base"
+                                            class="text-[10px] font-mono text-gray-500">00:00.000</span>
+                                    </div>
+                                    <input type="range" id="timeline-base" min="0" max="100" step="0.001" value="0"
+                                        class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand transition-all disabled:opacity-50"
+                                        disabled>
+                                </div>
                             </div>
 
                             <!-- Pista 2 (Solo) -->
@@ -1226,8 +1235,17 @@
                                             id="status-track-solo">Vazia</span>
                                     </div>
                                 </div>
-                                <input type="range" id="vol-solo" min="0" max="2" step="0.05" value="1"
-                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                                <div class="w-full flex flex-col gap-1">
+                                    <div class="flex justify-between items-center px-1">
+                                        <span id="time-current-solo"
+                                            class="text-[10px] font-mono text-gray-500">00:00.000</span>
+                                        <span id="time-total-solo"
+                                            class="text-[10px] font-mono text-gray-500">00:00.000</span>
+                                    </div>
+                                    <input type="range" id="timeline-solo" min="0" max="100" step="0.001" value="0"
+                                        class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand transition-all disabled:opacity-50"
+                                        disabled>
+                                </div>
                             </div>
                         </div>
 

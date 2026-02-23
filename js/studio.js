@@ -35,7 +35,28 @@ class StudioApp {
         this.startTime = 0;
         this.timerInterval = null;
 
+        // Players Independentes para Scrubbing/Timelines
+        this.playerBase = document.createElement('video');
+        this.playerBase.playsInline = true;
+        this.playerSolo = document.createElement('video');
+        this.playerSolo.playsInline = true;
+
+        this.tlBase = document.getElementById('timeline-base');
+        this.tlSolo = document.getElementById('timeline-solo');
+        this.timeCurBase = document.getElementById('time-current-base');
+        this.timeTotBase = document.getElementById('time-total-base');
+        this.timeCurSolo = document.getElementById('time-current-solo');
+        this.timeTotSolo = document.getElementById('time-total-solo');
+
         this.bindEvents();
+    }
+
+    formatMillis(seconds) {
+        if (isNaN(seconds) || !isFinite(seconds)) return "00:00.000";
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+        const ms = Math.floor((seconds % 1) * 1000).toString().padStart(3, '0');
+        return `${m}:${s}.${ms}`;
     }
 
     bindEvents() {
@@ -66,6 +87,45 @@ class StudioApp {
         // Apagar faixas
         document.getElementById('btn-trash-base').addEventListener('click', () => this.trashTrack('base'));
         document.getElementById('btn-trash-solo').addEventListener('click', () => this.trashTrack('solo'));
+
+        // Timelines / Scrubbing Events
+        if (this.tlBase) {
+            this.tlBase.addEventListener('input', (e) => {
+                if (this.playerBase.duration) {
+                    this.playerBase.currentTime = parseFloat(e.target.value);
+                }
+            });
+            this.playerBase.addEventListener('timeupdate', () => {
+                if (!this.tlBase.matches(':active')) {
+                    this.tlBase.value = this.playerBase.currentTime;
+                }
+                this.timeCurBase.innerText = this.formatMillis(this.playerBase.currentTime);
+            });
+            this.playerBase.addEventListener('loadedmetadata', () => {
+                this.tlBase.max = this.playerBase.duration;
+                this.tlBase.removeAttribute('disabled');
+                this.timeTotBase.innerText = this.formatMillis(this.playerBase.duration);
+            });
+        }
+
+        if (this.tlSolo) {
+            this.tlSolo.addEventListener('input', (e) => {
+                if (this.playerSolo.duration) {
+                    this.playerSolo.currentTime = parseFloat(e.target.value);
+                }
+            });
+            this.playerSolo.addEventListener('timeupdate', () => {
+                if (!this.tlSolo.matches(':active')) {
+                    this.tlSolo.value = this.playerSolo.currentTime;
+                }
+                this.timeCurSolo.innerText = this.formatMillis(this.playerSolo.currentTime);
+            });
+            this.playerSolo.addEventListener('loadedmetadata', () => {
+                this.tlSolo.max = this.playerSolo.duration;
+                this.tlSolo.removeAttribute('disabled');
+                this.timeTotSolo.innerText = this.formatMillis(this.playerSolo.duration);
+            });
+        }
     }
 
     async initStudio() {
@@ -218,7 +278,8 @@ class StudioApp {
         if (type === 'base') {
             this.baseBlob = blob;
             this.baseDuration = duration;
-            this.elBase.src = url;
+            this.playerBase.src = url; // Sincroniza player independente
+            this.elBase.src = url; // Mantém view principal de câmera embutida
 
             document.getElementById('status-track-base').innerText = 'Gravada';
             document.getElementById('status-track-base').classList.replace('text-brand', 'text-green-500');
@@ -233,6 +294,7 @@ class StudioApp {
         } else if (type === 'solo') {
             this.soloBlob = blob;
             this.soloDuration = duration;
+            this.playerSolo.src = url; // Sincroniza player independente
 
             document.getElementById('status-track-solo').innerText = 'Gravada';
             document.getElementById('status-track-solo').classList.replace('text-brand', 'text-green-500');
@@ -384,15 +446,16 @@ class StudioApp {
         if (this.previewTimeout) clearTimeout(this.previewTimeout);
 
         if (this.previewVideoBase) {
-            try { this.previewVideoBase.pause(); this.previewVideoBase.src = ""; } catch (e) { }
-            this.previewVideoBase = null;
+            try { this.previewVideoBase.pause(); this.previewVideoBase.currentTime = 0; } catch (e) { }
         }
         if (this.previewVideoSolo) {
-            try { this.previewVideoSolo.pause(); this.previewVideoSolo.src = ""; } catch (e) { }
-            this.previewVideoSolo = null;
+            try { this.previewVideoSolo.pause(); this.previewVideoSolo.currentTime = 0; } catch (e) { }
         }
 
-        if (this.elBase) this.elBase.pause();
+        if (this.elBase) {
+            this.elBase.pause();
+            try { this.elBase.currentTime = 0; } catch (e) { }
+        }
     }
 
     trashTrack(type) {
@@ -401,6 +464,11 @@ class StudioApp {
             this.baseBlob = null;
             this.baseDuration = 0;
             this.elBase.src = "";
+            this.playerBase.src = "";
+            if (this.timeTotBase) this.timeTotBase.innerText = "00:00.000";
+            if (this.timeCurBase) this.timeCurBase.innerText = "00:00.000";
+            if (this.tlBase) { this.tlBase.value = 0; this.tlBase.setAttribute('disabled', 'true'); }
+
             document.getElementById('status-track-base').innerText = 'Vazia';
             document.getElementById('status-track-base').classList.replace('text-green-500', 'text-brand');
             document.getElementById('status-track-base').classList.replace('bg-green-500/10', 'bg-brand/10');
@@ -425,6 +493,11 @@ class StudioApp {
         } else if (type === 'solo') {
             this.soloBlob = null;
             this.soloDuration = 0;
+            this.playerSolo.src = "";
+            if (this.timeTotSolo) this.timeTotSolo.innerText = "00:00.000";
+            if (this.timeCurSolo) this.timeCurSolo.innerText = "00:00.000";
+            if (this.tlSolo) { this.tlSolo.value = 0; this.tlSolo.setAttribute('disabled', 'true'); }
+
             document.getElementById('status-track-solo').innerText = 'Vazia';
             document.getElementById('status-track-solo').classList.replace('text-green-500', 'text-brand');
             document.getElementById('status-track-solo').classList.replace('bg-green-500/10', 'bg-brand/10');
@@ -491,12 +564,14 @@ class StudioApp {
             // Roteamento: Video -> AudioContext -> Gain -> Destination
             const srcBase = renderCtx.createMediaElementSource(vBase);
             const gainBase = renderCtx.createGain();
-            gainBase.gain.value = parseFloat(document.getElementById('vol-base').value || 1);
+            const volBaseNode = document.getElementById('vol-base');
+            gainBase.gain.value = volBaseNode ? parseFloat(volBaseNode.value || 1) : 1;
             srcBase.connect(gainBase).connect(audioDest);
 
             const srcSolo = renderCtx.createMediaElementSource(vSolo);
             const gainSolo = renderCtx.createGain();
-            gainSolo.gain.value = parseFloat(document.getElementById('vol-solo').value || 1);
+            const volSoloNode = document.getElementById('vol-solo');
+            gainSolo.gain.value = volSoloNode ? parseFloat(volSoloNode.value || 1) : 1;
             srcSolo.connect(gainSolo).connect(audioDest);
 
             // 5. Capturar Stream Combinada
