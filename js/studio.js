@@ -511,167 +511,100 @@ class StudioApp {
 
     async exportFinal() {
         if (!this.baseBlob || !this.soloBlob) {
-            MaestroCore.toast("Grave as duas faixas antes de gerar a mixagem final.", "error");
+            MaestroCore.toast('Grave as duas faixas antes de gerar a mixagem final.', 'error');
             return;
         }
 
-        this.btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Mixagem e Vídeo...';
+        this.btnExport.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Mixagem...';
         this.btnExport.classList.add('opacity-75', 'pointer-events-none');
-        MaestroCore.toast("Iniciando Renderização Lado a Lado...", "info");
+        MaestroCore.toast('Processando audio... aguarde.', 'info');
 
         try {
-            // 4. Iniciar AudioContext imediatamente (iOS exige que seja síncrono no evento de click)
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            const renderCtx = new AudioContextClass();
-            if (renderCtx.state === 'suspended') renderCtx.resume();
+            const decodeCtx = new AudioContextClass();
 
-            // 1. Criar Vídeos Invisíveis Offscreen
-            const vBase = document.createElement('video');
-            const vSolo = document.createElement('video');
-            vBase.playsInline = true; vBase.crossOrigin = "anonymous";
-            vSolo.playsInline = true; vSolo.crossOrigin = "anonymous";
-
-            vBase.src = URL.createObjectURL(this.baseBlob);
-            vSolo.src = URL.createObjectURL(this.soloBlob);
-
-            // 2. Aguardar carregamento (Simples e Direto)
-            const syncPromise = (vid) => new Promise((resolve) => {
-                if (vid.readyState >= 3) return resolve(); // Já carregado
-                vid.oncanplay = resolve;
-                vid.onerror = resolve;
-                setTimeout(resolve, 3000);
-            });
-            await Promise.all([syncPromise(vBase), syncPromise(vSolo)]);
-
-            // Garantir que os vídeos estão no DOM para o AudioContext (Necessário em alguns mobile)
-            vBase.style.position = 'fixed'; vBase.style.left = '-9999px'; vBase.style.top = '0';
-            vSolo.style.position = 'fixed'; vSolo.style.left = '-9999px'; vSolo.style.top = '0';
-            document.body.appendChild(vBase);
-            document.body.appendChild(vSolo);
-
-            // 3. Preparar o Canvas (Lado a Lado)
-            // Se o navegador não conseguiu ler a resolução (0x0), forçamos uma proporção para não criar canvas invisível
-            const wBase = vBase.videoWidth || 640;
-            const hBase = vBase.videoHeight || 480;
-            const wSolo = vSolo.videoWidth || 640;
-            const hSolo = vSolo.videoHeight || 480;
-
-            const canvas = document.createElement('canvas');
-            canvas.width = wBase + wSolo;
-            canvas.height = Math.max(hBase, hSolo);
-            const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Otimização Safari
-
-            const audioDest = renderCtx.createMediaStreamDestination();
-            const mixerBus = renderCtx.createGain();
-            mixerBus.connect(audioDest);
-
-            // Roteamento: Video -> AudioContext -> Gain -> Mixer -> Destination
-            const srcBase = renderCtx.createMediaElementSource(vBase);
-            const gainBase = renderCtx.createGain();
-            gainBase.gain.value = 1;
-            srcBase.connect(gainBase).connect(mixerBus);
-
-            const srcSolo = renderCtx.createMediaElementSource(vSolo);
-            const gainSolo = renderCtx.createGain();
-            gainSolo.gain.value = 1;
-            srcSolo.connect(gainSolo).connect(mixerBus);
-
-            // IMPORTANTE: Em alguns celulares o AudioContext "pausa" se não estiver ligado aos falantes
-            const masterSilence = renderCtx.createGain();
-            masterSilence.gain.value = 0;
-            mixerBus.connect(masterSilence).connect(renderCtx.destination);
-
-            // 5. Capturar Stream Combinada
-            let videoStream;
-            try {
-                videoStream = canvas.captureStream(30); // Fixado em 30 FPS
-                if (audioDest.stream.getAudioTracks().length > 0) {
-                    videoStream.addTrack(audioDest.stream.getAudioTracks()[0]);
-                }
-            } catch (errCapture) {
-                console.warn("captureStream falhou. Gravando apenas áudio", errCapture);
-                videoStream = audioDest.stream; // Fallback extremo
-            }
-
-            // Descobrir melhor MimeType suportado
-            const types = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-            let mimeType = 'video/webm';
-            for (const t of types) {
-                if (MediaRecorder.isTypeSupported(t)) { mimeType = t; break; }
-            }
-
-            const recorder = new MediaRecorder(videoStream, { mimeType, videoBitsPerSecond: 4000000 });
-
-            let finalChunks = [];
-            recorder.ondataavailable = e => {
-                if (e.data && e.data.size > 0) finalChunks.push(e.data);
+            const decodeBlob = async (blob) => {
+                const arrayBuf = await blob.arrayBuffer();
+                return decodeCtx.decodeAudioData(arrayBuf);
             };
 
-            recorder.onstop = () => {
-                cancelAnimationFrame(this.renderLoopId);
-                const actualMime = recorder.mimeType || mimeType || 'video/mp4';
-                const finalBlob = new Blob(finalChunks, { type: actualMime });
-                const url = URL.createObjectURL(finalBlob);
+            const [bufBase, bufSolo] = await Promise.all([
+                decodeBlob(this.baseBlob),
+                decodeBlob(this.soloBlob)
+            ]);
+            await decodeCtx.close();
 
-                // Força MP4 se for Apple/Mobile para garantir compatibilidade via File manager local
-                let ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
-                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) ext = 'mp4';
+            const sampleRate = bufBase.sampleRate || 44100;
+            const length = Math.min(bufBase.length, bufSolo.length);
+            const channels = Math.max(bufBase.numberOfChannels, bufSolo.numberOfChannels);
 
-                const fileName = `MaestroPro_Studio_${Date.now()}.${ext}`;
+            const offlineCtx = new OfflineAudioContext(channels, length, sampleRate);
 
-                this.btnExport.innerHTML = `<a href="${url}" download="${fileName}" class="w-full h-full flex items-center justify-center gap-2"><i class="fas fa-download"></i> Baixar Vídeo Final</a>`;
-                this.btnExport.classList.remove('opacity-75', 'pointer-events-none');
-                this.btnExport.classList.replace('bg-purple-600', 'bg-green-600');
-                this.btnExport.classList.replace('hover:bg-purple-700', 'hover:bg-green-700');
+            const s1 = offlineCtx.createBufferSource();
+            s1.buffer = bufBase;
+            s1.connect(offlineCtx.destination);
+            s1.start(0);
 
-                // Cleanup Offscreen elements
-                vBase.src = ""; vSolo.src = "";
-                if (vBase.parentNode) vBase.parentNode.removeChild(vBase);
-                if (vSolo.parentNode) vSolo.parentNode.removeChild(vSolo);
-                MaestroCore.toast("Renderização concluída! Clique no botão verde.", "success");
-            };
+            const s2 = offlineCtx.createBufferSource();
+            s2.buffer = bufSolo;
+            s2.connect(offlineCtx.destination);
+            s2.start(0);
 
-            // 6. Loop de Renderização (DrawImage)
-            const renderLoop = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // Usar as dimensões calculadas wBase/hBase para evitar desenho de 0x0
-                ctx.drawImage(vBase, 0, 0, wBase, hBase);
-                ctx.drawImage(vSolo, wBase, 0, wSolo, hSolo);
-                this.renderLoopId = requestAnimationFrame(renderLoop);
-            };
+            const rendered = await offlineCtx.startRendering();
+            const wavBlob = this.encodeWav(rendered);
+            const url = URL.createObjectURL(wavBlob);
+            const fileName = 'MaestroPro_Mix_' + Date.now() + '.wav';
 
-            // INICIO SINCRONIZADO (Mais robusto para evitar interrupção por load)
-            vBase.currentTime = 0; vSolo.currentTime = 0;
-            vBase.muted = true; vSolo.muted = true;
-            try {
-                await Promise.all([
-                    vBase.play().catch(() => { }),
-                    vSolo.play().catch(() => { })
-                ]);
-            } catch (e) { }
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 5000);
 
-            this.renderLoopId = requestAnimationFrame(renderLoop);
-
-            // Aguarda 500ms de "warm up" para o encoder de vídeo não engasgar no primeiro frame
-            setTimeout(() => {
-                recorder.start(200);
-            }, 500);
-
-            const minDurationMs = Math.min((this.baseDuration || 0), (this.soloDuration || 0)) * 1000;
-            const targetDuration = minDurationMs > 0 ? minDurationMs : 5000;
-
-            setTimeout(() => {
-                if (recorder.state !== 'inactive') recorder.stop();
-                vBase.pause(); vSolo.pause();
-                renderCtx.close();
-            }, targetDuration + 700);
+            this.btnExport.innerHTML = '<i class="fas fa-check"></i> Mixagem Baixada!';
+            this.btnExport.classList.remove('opacity-75', 'pointer-events-none', 'bg-purple-600', 'hover:bg-purple-700');
+            this.btnExport.classList.add('bg-green-600', 'hover:bg-green-700');
+            MaestroCore.toast('Arquivo salvo! Verifique seus downloads.', 'success');
 
         } catch (error) {
-            console.error("Studio render error:", error);
-            MaestroCore.toast(`Falha Crítica no Render: ${error.message}`, "error");
-            this.btnExport.innerHTML = '<i class="fas fa-file-export"></i> Gerar Versão Final';
+            console.error('Studio render error:', error);
+            MaestroCore.toast('Falha: ' + error.message, 'error');
+            this.btnExport.innerHTML = '<i class="fas fa-file-export"></i> Gerar Versao Final';
             this.btnExport.classList.remove('opacity-75', 'pointer-events-none');
         }
+    }
+
+    encodeWav(buffer) {
+        const numChannels = buffer.numberOfChannels;
+        const sampleRate = buffer.sampleRate;
+        const numSamples = buffer.length;
+        const dataSize = numSamples * numChannels * 2;
+        const ab = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(ab);
+        const writeStr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+        writeStr(0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeStr(8, 'WAVE');
+        writeStr(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * numChannels * 2, true);
+        view.setUint16(32, numChannels * 2, true);
+        view.setUint16(34, 16, true);
+        writeStr(36, 'data');
+        view.setUint32(40, dataSize, true);
+        let offset = 44;
+        for (let i = 0; i < numSamples; i++) {
+            for (let ch = 0; ch < numChannels; ch++) {
+                const s = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+                view.setInt16(offset, s < 0 ? s * 32768 : s * 32767, true);
+                offset += 2;
+            }
+        }
+        return new Blob([ab], { type: 'audio/wav' });
     }
 }
 
