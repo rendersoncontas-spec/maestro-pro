@@ -470,10 +470,13 @@ class StudioApp {
             vBase.src = URL.createObjectURL(this.baseBlob);
             vSolo.src = URL.createObjectURL(this.soloBlob);
 
-            // 2. Aguardar carregamento para ter as dimensões reais (canplaythrough)
-            const syncPromise = (vid) => new Promise((resolve, reject) => {
-                vid.onloadedmetadata = () => { vid.oncanplaythrough = resolve; vid.load(); };
-                vid.onerror = reject;
+            // 2. Aguardar carregamento (com timeout de segurança para evitar travamento infinito)
+            const syncPromise = (vid) => new Promise((resolve) => {
+                let resolved = false;
+                const finish = () => { if (!resolved) { resolved = true; resolve(); } };
+                vid.onloadedmetadata = () => { vid.oncanplaythrough = finish; vid.load(); };
+                vid.onerror = finish;
+                setTimeout(finish, 2500); // 2.5s Limite Máximo de espera
             });
             await Promise.all([syncPromise(vBase), syncPromise(vSolo)]);
 
@@ -497,14 +500,21 @@ class StudioApp {
             srcSolo.connect(gainSolo).connect(audioDest);
 
             // 5. Capturar Stream Combinada
-            const videoStream = canvas.captureStream(30); // Fixado em 30 FPS
-            if (audioDest.stream.getAudioTracks().length > 0) {
-                videoStream.addTrack(audioDest.stream.getAudioTracks()[0]);
+            let videoStream;
+            try {
+                videoStream = canvas.captureStream(30); // Fixado em 30 FPS
+                if (audioDest.stream.getAudioTracks().length > 0) {
+                    videoStream.addTrack(audioDest.stream.getAudioTracks()[0]);
+                }
+            } catch (errCapture) {
+                console.warn("captureStream falhou. Gravando apenas áudio", errCapture);
+                videoStream = audioDest.stream; // Fallback extremo
             }
 
             // Descobrir melhor MimeType suportado
             let mimeType = 'video/webm;codecs=vp8,opus';
-            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/mp4'; // fallback
+            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm'; // fallback seguro
+            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/mp4';
 
             let recorder;
             try {
@@ -543,13 +553,15 @@ class StudioApp {
                 this.renderLoopId = requestAnimationFrame(renderLoop);
             };
 
+            // Força reset de currentTime e PLAY explícito ANTES de capturar stream 
+            // (Crucial para iOS/Android não congelarem a Canvas)
+            vBase.currentTime = 0; vSolo.currentTime = 0;
+            vBase.play().catch(e => console.warn("Erro ao forçar play offscreen", e));
+            vSolo.play().catch(e => console.warn("Erro ao forçar play offscreen", e));
+
             // Iniciar o Processo em Sincronia Rígida
             this.renderLoopId = requestAnimationFrame(renderLoop);
-            recorder.start();
-
-            // Força reset de currentTime antes do start play para evitar gaps
-            vBase.currentTime = 0; vSolo.currentTime = 0;
-            vBase.play(); vSolo.play();
+            recorder.start(100); // chunking reduz uso de RAM
 
             // 7. Controle de Duração (Menor Tempo Manda)
             const minDurationMs = Math.min((this.baseDuration || 0), (this.soloDuration || 0)) * 1000;
