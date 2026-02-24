@@ -1093,14 +1093,13 @@ const FretboardApp = {
     },
 
     /**
-     * Renderiza os botões com as variações de shape geradas pelo Dicionário
+     * Renderiza grade de cards SVG com TODOS os shapes do acorde
      */
     renderChordVariationsUI(variations, query) {
         this.clearHighlights();
 
         const container = document.getElementById('chord-shapes-container');
         container.innerHTML = '';
-
         this.currentVariations = variations;
         this.currentVarIndex = 0;
 
@@ -1110,61 +1109,187 @@ const FretboardApp = {
             return;
         }
 
-        const navWrapper = document.createElement('div');
-        navWrapper.className = 'flex items-center gap-4 w-full md:w-auto bg-gray-50 dark:bg-dark-element/50 p-2 rounded-2xl border border-gray-100 dark:border-gray-800';
+        // Header com nome do acorde e contagem
+        const header = document.createElement('div');
+        header.className = 'w-full flex items-center gap-3 mb-3';
+        header.innerHTML = `
+          <span class="text-lg font-black text-brand">${query}</span>
+          <span class="text-xs text-gray-400 font-bold uppercase tracking-widest">${variations.length} posição(ões) encontrada(s)</span>`;
+        container.appendChild(header);
 
-        const infoSpan = document.createElement('span');
-        infoSpan.className = 'text-sm font-black text-gray-700 dark:text-gray-300 min-w-[120px] text-center';
+        // Grade de cards (scroll horizontal em mobile)
+        const grid = document.createElement('div');
+        grid.id = 'chord-cards-grid';
+        grid.className = 'flex flex-wrap gap-3 w-full overflow-x-auto pb-2';
 
-        const btnPrev = document.createElement('button');
-        btnPrev.className = 'w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-brand hover:border-brand transition-colors active:scale-95 shadow-sm';
-        btnPrev.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        variations.forEach((shape, idx) => {
+            const card = document.createElement('div');
+            card.className = 'chord-card flex flex-col items-center gap-1 bg-white dark:bg-dark-element rounded-2xl border-2 border-transparent hover:border-brand cursor-pointer transition-all duration-200 shadow-md p-3 group select-none';
+            card.style.minWidth = '110px';
+            card.dataset.varIndex = idx;
 
-        const btnNext = document.createElement('button');
-        btnNext.className = 'w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-brand hover:border-brand transition-colors active:scale-95 shadow-sm';
-        btnNext.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            const title = document.createElement('div');
+            title.className = 'text-xs font-black text-gray-600 dark:text-gray-300 tracking-wide group-hover:text-brand transition-colors';
+            title.innerText = shape.titulo.replace(' - Formato', ' ');
 
-        const updateUI = () => {
-            infoSpan.innerText = `Posição ${this.currentVarIndex + 1} de ${this.currentVariations.length}`;
-            btnPrev.disabled = this.currentVarIndex === 0;
-            btnNext.disabled = this.currentVarIndex === this.currentVariations.length - 1;
+            card.appendChild(title);
+            card.appendChild(this.buildChordSVG(shape));
 
-            btnPrev.style.opacity = btnPrev.disabled ? '0.3' : '1';
-            btnNext.style.opacity = btnNext.disabled ? '0.3' : '1';
-            btnPrev.style.cursor = btnPrev.disabled ? 'not-allowed' : 'pointer';
-            btnNext.style.cursor = btnNext.disabled ? 'not-allowed' : 'pointer';
-
-            this.renderChordShape(this.currentVariations[this.currentVarIndex]);
-        };
-
-        btnPrev.addEventListener('click', () => {
-            if (this.currentVarIndex > 0) {
-                this.currentVarIndex--;
-                updateUI();
+            // Mostrar se tem pestana
+            if (shape.pestana) {
+                const bTag = document.createElement('span');
+                bTag.className = 'text-[10px] font-bold text-amber-500 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full';
+                bTag.innerHTML = `<i class="fas fa-arrow-left mr-1"></i>Casa ${shape.pestana.casa}`;
+                card.appendChild(bTag);
+            } else if (shape.casaInicial > 0) {
+                const posTag = document.createElement('span');
+                posTag.className = 'text-[10px] font-bold text-gray-400 px-2 py-0.5 rounded-full';
+                posTag.innerText = `Casa ${shape.casaInicial}`;
+                card.appendChild(posTag);
+            } else {
+                const openTag = document.createElement('span');
+                openTag.className = 'text-[10px] font-bold text-green-500 px-2 py-0.5 rounded-full';
+                openTag.innerText = 'Abert.';
+                card.appendChild(openTag);
             }
+
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.chord-card').forEach(c => c.classList.remove('border-brand', 'shadow-brand'));
+                card.classList.add('border-brand', 'shadow-xl');
+                this.currentVarIndex = idx;
+                this.renderChordShape(shape);
+            });
+
+            grid.appendChild(card);
         });
 
-        btnNext.addEventListener('click', () => {
-            if (this.currentVarIndex < this.currentVariations.length - 1) {
-                this.currentVarIndex++;
-                updateUI();
-            }
-        });
-
-        navWrapper.appendChild(btnPrev);
-        navWrapper.appendChild(infoSpan);
-        navWrapper.appendChild(btnNext);
-
-        const label = document.createElement('span');
-        label.className = 'text-xs font-bold text-gray-500 uppercase tracking-widest shrink-0 mr-2';
-        label.innerText = 'Variações:';
-
-        container.appendChild(label);
-        container.appendChild(navWrapper);
-
+        container.appendChild(grid);
         container.classList.remove('hidden');
 
-        updateUI();
+        // Destacar o primeiro por padrão
+        this.renderChordShape(variations[0]);
+        if (grid.firstChild) grid.firstChild.classList.add('border-brand', 'shadow-xl');
+    },
+
+    /**
+     * Gera SVG mini-diagrama profissional para um shape
+     */
+    buildChordSVG(shape) {
+        const STRINGS = 6;
+        const FRETS = 5;
+        const W = 100, H = 100;
+        const paddingL = 14, paddingT = 18, paddingR = 10, paddingB = 10;
+        const gridW = W - paddingL - paddingR;
+        const gridH = H - paddingT - paddingB;
+        const strGap = gridW / (STRINGS - 1);
+        const fretGap = gridH / FRETS;
+        const DOT_R = 7;
+
+        // Determine window of frets to show
+        const playedFrets = [
+            ...shape.dedos.map(d => d.casa),
+            shape.pestana ? shape.pestana.casa : null
+        ].filter(f => f != null && f > 0);
+        const minF = playedFrets.length ? Math.min(...playedFrets) : 1;
+        const startFret = minF > 2 ? minF : 1;
+
+        const ns = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.setAttribute('width', '90');
+        svg.setAttribute('height', '90');
+
+        const mk = (tag, attrs) => {
+            const el = document.createElementNS(ns, tag);
+            Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+            return el;
+        };
+
+        // Fundo grid: linhas de cordas (verticais)
+        for (let s = 0; s < STRINGS; s++) {
+            const x = paddingL + s * strGap;
+            const line = mk('line', { x1: x, y1: paddingT, x2: x, y2: paddingT + gridH, stroke: '#94a3b8', 'stroke-width': s === 0 || s === STRINGS - 1 ? 2 : 1 });
+            svg.appendChild(line);
+        }
+        // Linhas de trastes (horizontais)
+        for (let f = 0; f <= FRETS; f++) {
+            const y = paddingT + f * fretGap;
+            const line = mk('line', { x1: paddingL, y1: y, x2: paddingL + gridW, y2: y, stroke: f === 0 ? '#334155' : '#94a3b8', 'stroke-width': f === 0 ? 3 : 1 });
+            svg.appendChild(line);
+        }
+
+        // Número da casa inicial (se > 1)
+        if (startFret > 1) {
+            const fretLabel = mk('text', { x: W - 4, y: paddingT + fretGap * 0.7, 'font-size': 8, fill: '#f59e0b', 'font-weight': 'bold', 'text-anchor': 'end' });
+            fretLabel.textContent = `${startFret}ª`;
+            svg.appendChild(fretLabel);
+        }
+
+        // Símbolos abertos / mutados acima do grid
+        const buildStringSymbols = () => {
+            for (let sIdx = 0; sIdx < STRINGS; sIdx++) {
+                const strNum = 6 - sIdx; // E6=6 ... E1=1
+                const cx = paddingL + sIdx * strGap;
+                const cy = paddingT - 7;
+
+                if (shape.cordasMutadas.includes(strNum)) {
+                    // X - muted
+                    const t = mk('text', { x: cx, y: cy + 3, 'font-size': 9, 'text-anchor': 'middle', fill: '#ef4444', 'font-weight': 'bold' });
+                    t.textContent = '✕';
+                    svg.appendChild(t);
+                } else if (shape.cordasSoltas.includes(strNum)) {
+                    // O - open
+                    const c = mk('circle', { cx, cy, r: 4, stroke: '#22c55e', 'stroke-width': 1.5, fill: 'none' });
+                    svg.appendChild(c);
+                }
+            }
+        };
+        buildStringSymbols();
+
+        // Pestana (Barre) - seta/barra laranja
+        if (shape.pestana && shape.pestana.casa > 0) {
+            const p = shape.pestana;
+            const fRel = p.casa - startFret + 1;
+            if (fRel >= 1 && fRel <= FRETS) {
+                const y = paddingT + (fRel - 0.5) * fretGap;
+                const s1Idx = STRINGS - p.daCorda; // (from E6=0)
+                const s2Idx = STRINGS - p.ateCorda;
+                const x1 = paddingL + Math.min(s1Idx, s2Idx) * strGap;
+                const x2 = paddingL + Math.max(s1Idx, s2Idx) * strGap;
+
+                // Barra arredondada
+                const rect = mk('rect', {
+                    x: x1 - 4, y: y - 5, width: (x2 - x1) + 8, height: 10,
+                    rx: 5, fill: '#f59e0b', opacity: 0.9
+                });
+                svg.appendChild(rect);
+
+                // Seta indicadora na esquerda (→)
+                const arrow = mk('text', { x: x1 - 9, y: y + 3.5, 'font-size': 8, fill: '#f59e0b', 'font-weight': 'bold' });
+                arrow.textContent = '←';
+                svg.appendChild(arrow);
+            }
+        }
+
+        // Dedos (dots)
+        shape.dedos.forEach(d => {
+            const sIdx = STRINGS - d.corda;
+            const fRel = d.casa - startFret + 1;
+            if (fRel < 1 || fRel > FRETS) return;
+            const cx = paddingL + sIdx * strGap;
+            const cy = paddingT + (fRel - 0.5) * fretGap;
+
+            const circle = mk('circle', { cx, cy, r: DOT_R, fill: '#7c3aed', stroke: '#5b21b6', 'stroke-width': 1 });
+            svg.appendChild(circle);
+
+            if (d.dedo && d.dedo !== 'x' && !isNaN(d.dedo)) {
+                const t = mk('text', { x: cx, y: cy + 3.5, 'font-size': 7, 'text-anchor': 'middle', fill: 'white', 'font-weight': 'bold' });
+                t.textContent = d.dedo;
+                svg.appendChild(t);
+            }
+        });
+
+        return svg;
     },
 
     /**
@@ -1199,7 +1324,7 @@ const FretboardApp = {
             }
         });
 
-        // Desenhar Pestana (Barre)
+        // Desenhar Pestana (Barre) no fretboard principal
         if (shape.pestana) {
             const startS = shape.pestana.daCorda;
             const endS = shape.pestana.ateCorda;
@@ -1207,7 +1332,6 @@ const FretboardApp = {
 
             if (barreFret > 0) {
                 setTimeout(() => {
-                    // Pegar a bolinha superior e a inferior da pestana na mesma casa
                     const topEl = document.querySelector(`.note-circle[data-string="${endS}"][data-fret="${barreFret}"]`);
                     const botEl = document.querySelector(`.note-circle[data-string="${startS}"][data-fret="${barreFret}"]`);
 
@@ -1221,20 +1345,14 @@ const FretboardApp = {
                         const leftX = botRect.left - containerRect.left;
 
                         const barreDiv = document.createElement('div');
-                        // Estilo "Seta" para a Pestana
                         barreDiv.className = 'pestana-seta z-25 pointer-events-none transition-all duration-300 drop-shadow-md';
 
-                        // Calcular altura dinamicamente para cobrir todas as cordas necessárias
                         const height = (botY - topY);
-
-                        barreDiv.style.top = `${topY + 16}px`; // Ajuste fino com base na bolinha
-                        barreDiv.style.left = `${leftX + 13}px`; // Posição centralizada para a bolinha
+                        barreDiv.style.top = `${topY + 16}px`;
+                        barreDiv.style.left = `${leftX + 13}px`;
                         barreDiv.style.height = `${height}px`;
 
-                        // Se tiver numero do dedo na bolinha menor, salvar para plotar na base da seta
                         const fingerText = topEl.innerText;
-
-                        // Numero do dedo na base da flecha
                         if (!isNaN(parseInt(fingerText))) {
                             const numLabel = document.createElement('div');
                             numLabel.className = 'absolute -bottom-4 -left-2.5 w-6 h-6 bg-purple-600 rounded-full text-white font-black text-xs flex items-center justify-center shadow-md z-40 border-2 border-[#3a2318] ring-1 ring-purple-400';
@@ -1242,24 +1360,20 @@ const FretboardApp = {
                             barreDiv.appendChild(numLabel);
                         }
 
-                        // Ocultar os números soltos sob a pestana para evitar sobreposição visual
                         for (let c = startS; c <= endS; c++) {
                             let innerNote = document.querySelector(`.note-circle[data-string="${c}"][data-fret="${barreFret}"]`);
                             if (innerNote) {
-                                // Esconde a bolinha por completo para a pestana ficar "limpa"
                                 innerNote.classList.remove('active', 'bg-brand', 'bg-purple-600');
                                 innerNote.style.opacity = '0';
-
                                 if (innerNote.parentElement) {
                                     innerNote.parentElement.classList.remove('bg-white/20', 'scale-110');
                                 }
                             }
                         }
 
-                        // FIXED: Renderizar a pestana montada no DOM
                         document.getElementById('fretboard-container').appendChild(barreDiv);
                     }
-                }, 50); // delay leve para garantir renderização no DOM
+                }, 50);
             }
         }
 
