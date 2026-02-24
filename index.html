@@ -38,6 +38,14 @@
         tailwind.config = {
             darkMode: 'class',
             theme: {
+                screens: {
+                    'xs': '480px',
+                    'sm': '640px',
+                    'md': '768px',
+                    'lg': '1024px',
+                    'xl': '1280px',
+                    '2xl': '1536px',
+                },
                 extend: {
                     colors: {
                         brand: {
@@ -141,39 +149,41 @@
          ========================================== -->
     <header
         class="bg-white dark:bg-dark-surface shadow-sm z-30 sticky top-0 shrink-0 border-b border-gray-200 dark:border-gray-800 pt-[env(safe-area-inset-top)]">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <i class="fas fa-compact-disc text-brand text-3xl animate-spin-slow drop-shadow-md"></i>
+        <div
+            class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 h-14 sm:h-16 md:h-20 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 sm:gap-4">
+                <i class="fas fa-compact-disc text-brand text-2xl sm:text-3xl animate-spin-slow drop-shadow-md"></i>
                 <div class="flex flex-col">
-                    <span class="text-2xl font-black tracking-tight leading-none">Maestro <span
+                    <span class="text-lg sm:text-2xl font-black tracking-tight leading-none">Maestro <span
                             class="text-brand">Pro</span></span>
                     <span class="text-[10px] uppercase font-bold text-gray-400 tracking-widest hidden md:block">Studio
                         Version</span>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4 lg:gap-6">
-                <!-- Status Global (Modo Foco/Igreja indicadors) -->
-                <div id="global-status-badges" class="hidden md:flex items-center gap-2">
-                    <!-- Injetado via JS -->
-                </div>
+            <div class="flex items-center gap-2 sm:gap-4 lg:gap-6">
+                <!-- Status Global -->
+                <div id="global-status-badges" class="hidden md:flex items-center gap-2"></div>
 
                 <div id="user-profile-area"
-                    class="flex items-center gap-3 bg-gray-100 dark:bg-dark-element px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 transition-colors">
-                    <div class="w-6 h-6 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs"><i
-                            class="fas fa-user-shield"></i></div>
-                    <span class="text-sm font-bold text-gray-600 dark:text-gray-300">Modo Local</span>
+                    class="flex items-center gap-2 bg-gray-100 dark:bg-dark-element px-2 sm:px-4 py-1.5 sm:py-2 rounded-full border border-gray-200 dark:border-gray-700 transition-colors">
+                    <div
+                        class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <span class="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-300 hidden xs:inline">Modo
+                        Local</span>
                 </div>
 
                 <button id="btnInstalarApp"
-                    class="hidden items-center gap-2 bg-brand/10 text-brand hover:bg-brand hover:text-white px-4 py-2 rounded-full font-bold text-sm transition-colors cursor-pointer border border-brand/20 shadow">
+                    class="hidden items-center gap-2 bg-brand/10 text-brand hover:bg-brand hover:text-white px-3 py-1.5 rounded-full font-bold text-xs sm:text-sm transition-colors cursor-pointer border border-brand/20 shadow">
                     <i class="fas fa-download"></i> <span class="hidden sm:inline">Baixar App</span>
                 </button>
 
-                <div class="h-8 w-px bg-gray-300 dark:bg-gray-700"></div>
+                <div class="h-6 w-px bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
 
                 <button id="btn-theme-toggle"
-                    class="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-dark-element transition-colors text-gray-600 dark:text-gray-300 text-lg">
+                    class="p-2 sm:p-3 rounded-full hover:bg-gray-100 dark:hover:bg-dark-element transition-colors text-gray-600 dark:text-gray-300 text-base sm:text-lg">
                     <i class="fas fa-moon"></i>
                 </button>
             </div>
@@ -242,7 +252,8 @@
         </nav>
 
         <!-- Container de Vistas Principais -->
-        <main class="flex-1 p-4 md:p-8 pb-24 md:pb-8 relative scroll-smooth bg-gray-50/50 dark:bg-dark-bg/50">
+        <main
+            class="flex-1 p-3 sm:p-4 md:p-8 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 overflow-y-auto scroll-smooth bg-gray-50/50 dark:bg-dark-bg/50">
 
             <!-- ==========================================
                  VIEW: HUB DE FERRAMENTAS (GRID)
@@ -353,27 +364,27 @@
             <!-- ==========================================
                  VIEW: METRÔNOMO PROFISSIONAL
                  ========================================== -->
-            <section id="view-metronome" class="view-section max-w-6xl mx-auto h-full flex flex-col animate-fade-in">
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 flex-1">
+            <section id="view-metronome" class="view-section max-w-6xl mx-auto flex flex-col animate-fade-in">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-8">
 
                     <!-- Painel Central do Metrônomo -->
                     <div
-                        class="xl:col-span-2 bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm flex flex-col items-center justify-center relative border border-gray-100 dark:border-gray-800">
+                        class="xl:col-span-2 bg-white dark:bg-dark-surface rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-5 md:p-8 shadow-sm flex flex-col items-center justify-center relative border border-gray-100 dark:border-gray-800">
 
                         <div id="visual-pulse"
-                            class="absolute top-8 right-8 w-5 h-5 rounded-full bg-gray-300 dark:bg-dark-element transition-colors">
+                            class="absolute top-4 right-4 sm:top-8 sm:right-8 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-300 dark:bg-dark-element transition-colors">
                         </div>
 
                         <!-- Indicador de Prática & Offset Rítmico -->
-                        <div class="absolute top-8 left-8 flex flex-col gap-2 z-10">
+                        <div class="absolute top-4 left-4 sm:top-8 sm:left-8 flex flex-col gap-1 z-10">
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="bg-gray-100 dark:bg-dark-element px-4 py-2 rounded-xl shadow-inner border border-gray-200 dark:border-gray-700 flex flex-col">
+                                    class="bg-gray-100 dark:bg-dark-element px-2 sm:px-4 py-1 sm:py-2 rounded-xl shadow-inner border border-gray-200 dark:border-gray-700 flex flex-col">
                                     <span
-                                        class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Sessão
+                                        class="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-0.5 sm:mb-1">Sessão
                                         Atual</span>
                                     <span id="timer-display"
-                                        class="font-mono text-gray-800 dark:text-white text-2xl font-black leading-none">00:00</span>
+                                        class="font-mono text-gray-800 dark:text-white text-lg sm:text-2xl font-black leading-none">00:00</span>
                                 </div>
                             </div>
                             <div id="rhythm-offset-display"
@@ -383,42 +394,44 @@
                         </div>
 
                         <!-- Controle de BPM -->
-                        <div class="text-center mb-12 w-full mt-24 md:mt-16">
-                            <div class="flex items-center justify-center gap-6 mb-4">
+                        <div class="text-center mb-2 sm:mb-6 md:mb-10 w-full mt-8 sm:mt-12 md:mt-16">
+                            <div class="flex items-center justify-center gap-3 sm:gap-4 md:gap-6 mb-2 sm:mb-4">
                                 <button id="btn-bpm-minus"
-                                    class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-2xl transition-all active:scale-95 shadow-sm border border-gray-200 dark:border-gray-700"><i
+                                    class="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-lg sm:text-2xl transition-all active:scale-95 shadow-sm border border-gray-200 dark:border-gray-700"><i
                                         class="fas fa-minus"></i></button>
 
                                 <div class="relative group">
                                     <input type="number" id="bpm-display" value="70"
-                                        class="text-8xl md:text-[140px] font-black tracking-tighter bg-transparent text-center outline-none w-64 m-0 p-0 text-gray-800 dark:text-white selection:bg-brand/30 transition-all">
+                                        class="text-5xl sm:text-7xl md:text-[110px] font-black tracking-tighter bg-transparent text-center outline-none w-36 sm:w-52 md:w-64 m-0 p-0 text-gray-800 dark:text-white selection:bg-brand/30 transition-all">
                                     <div
                                         class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-brand transition-all group-hover:w-full rounded-full">
                                     </div>
                                 </div>
 
                                 <button id="btn-bpm-plus"
-                                    class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-2xl transition-all active:scale-95 shadow-sm border border-gray-200 dark:border-gray-700"><i
+                                    class="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-lg sm:text-2xl transition-all active:scale-95 shadow-sm border border-gray-200 dark:border-gray-700"><i
                                         class="fas fa-plus"></i></button>
                             </div>
-                            <div class="text-gray-400 uppercase tracking-[0.3em] text-sm font-black">
+                            <div
+                                class="text-gray-400 uppercase tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.3em] text-[10px] sm:text-xs md:text-sm font-black">
                                 Batidas Por Minuto
                             </div>
                         </div>
 
-                        <input type="range" id="bpm-slider" min="20" max="300" value="70" class="w-full max-w-xl mb-12">
+                        <input type="range" id="bpm-slider" min="20" max="300" value="70"
+                            class="w-full max-w-xl mb-2 sm:mb-6 md:mb-10">
 
                         <!-- Controles Secundários -->
-                        <div class="flex flex-wrap justify-center gap-4 mb-16 w-full">
+                        <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mb-2 sm:mb-6 md:mb-10 w-full">
                             <button id="btn-tap"
-                                class="px-8 py-4 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 font-bold text-lg transition-all active:scale-95 flex items-center gap-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                                class="px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-2xl bg-gray-100 dark:bg-dark-element hover:bg-gray-200 dark:hover:bg-gray-700 font-bold text-base sm:text-lg transition-all active:scale-95 flex items-center gap-2 sm:gap-3 shadow-sm border border-gray-200 dark:border-gray-700">
                                 <i class="fas fa-hand-pointer text-brand"></i> Tap Tempo
                             </button>
 
                             <div
-                                class="flex items-center bg-gray-100 dark:bg-dark-element rounded-2xl p-2 shadow-sm border border-gray-200 dark:border-gray-700 text-lg">
+                                class="flex items-center bg-gray-100 dark:bg-dark-element rounded-2xl p-1.5 sm:p-2 shadow-sm border border-gray-200 dark:border-gray-700 text-base sm:text-lg">
                                 <select id="time-sig-beats"
-                                    class="bg-transparent border-none outline-none font-black text-center appearance-none px-4 py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition">
+                                    class="bg-transparent border-none outline-none font-black text-center appearance-none px-2 sm:px-4 py-1.5 sm:py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition">
                                     <option value="2">2</option>
                                     <option value="3">3</option>
                                     <option value="4" selected>4</option>
@@ -430,7 +443,7 @@
                                 </select>
                                 <span class="flex items-center text-gray-400 font-light mx-1">/</span>
                                 <select id="time-sig-note"
-                                    class="bg-transparent border-none outline-none font-black text-center appearance-none px-4 py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition">
+                                    class="bg-transparent border-none outline-none font-black text-center appearance-none px-2 sm:px-4 py-1.5 sm:py-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition">
                                     <option value="4" selected>4</option>
                                     <option value="8">8</option>
                                 </select>
@@ -444,17 +457,17 @@
 
                         <!-- Botão Play Primário -->
                         <button id="btn-play-metronome"
-                            class="w-32 h-32 rounded-full bg-brand hover:bg-brand-dark text-white shadow-[0_10px_40px_-10px_rgba(16,185,129,0.8)] flex items-center justify-center text-5xl transition-all active:scale-90 transform hover:-translate-y-2">
-                            <i class="fas fa-play ml-2"></i>
+                            class="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full bg-brand hover:bg-brand-dark text-white shadow-[0_10px_40px_-10px_rgba(16,185,129,0.8)] flex items-center justify-center text-2xl sm:text-4xl md:text-5xl transition-all active:scale-90 transform hover:-translate-y-1 mb-1">
+                            <i class="fas fa-play ml-1"></i>
                         </button>
                     </div>
 
                     <!-- Configurações e Modos Especiais -->
-                    <div class="flex flex-col gap-6">
+                    <div class="flex flex-col gap-4 sm:gap-6">
 
                         <!-- Painel Principal de Ajustes -->
                         <div
-                            class="bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm border border-gray-100 dark:border-gray-800">
+                            class="bg-white dark:bg-dark-surface rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-800">
                             <h3 class="font-bold text-xl mb-6 text-gray-800 dark:text-white flex items-center gap-2">
                                 <i class="fas fa-sliders-h text-brand"></i> Ajustes Sonoros
                             </h3>
@@ -568,7 +581,7 @@
 
                         <!-- Módulo de Gravação de Estudo -->
                         <div
-                            class="bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm flex-1 border border-gray-100 dark:border-gray-800">
+                            class="bg-white dark:bg-dark-surface rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm flex-1 border border-gray-100 dark:border-gray-800">
                             <h3 class="font-bold text-xl mb-2 text-gray-800 dark:text-white flex items-center gap-2">
                                 <i class="fas fa-video text-brand"></i> Gravação
                             </h3>
@@ -632,7 +645,7 @@
 
                         <!-- Módulo Avançado: Treino Progressivo -->
                         <div
-                            class="bg-white dark:bg-dark-surface rounded-[2rem] p-8 shadow-sm flex-1 border border-gray-100 dark:border-gray-800">
+                            class="bg-white dark:bg-dark-surface rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm flex-1 border border-gray-100 dark:border-gray-800">
                             <h3 class="font-bold text-xl mb-2 text-gray-800 dark:text-white flex items-center gap-2">
                                 <i class="fas fa-dumbbell text-orange-500"></i> Speed Trainer
                             </h3>
@@ -694,10 +707,10 @@
                  VIEW: AFINADOR DE ALTA PRECISñO
                  ========================================== -->
             <section id="view-tuner"
-                class="view-section hidden max-w-4xl mx-auto h-full flex flex-col items-center justify-center animate-fade-in">
+                class="view-section hidden max-w-4xl mx-auto flex flex-col items-center animate-fade-in">
 
                 <div
-                    class="bg-white dark:bg-dark-surface rounded-[3rem] p-8 md:p-12 shadow-sm w-full flex flex-col items-center relative overflow-hidden border border-gray-100 dark:border-gray-800">
+                    class="bg-white dark:bg-dark-surface rounded-[1.5rem] sm:rounded-[2rem] md:rounded-[3rem] p-4 sm:p-6 md:p-12 shadow-sm w-full flex flex-col items-center relative overflow-hidden border border-gray-100 dark:border-gray-800">
 
                     <div id="tuner-init-overlay"
                         class="absolute inset-0 z-30 bg-white/95 dark:bg-dark-surface/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center transition-all duration-500">
@@ -983,7 +996,7 @@
             <section id="view-fretboard"
                 class="view-section hidden max-w-6xl mx-auto h-full flex flex-col animate-fade-in">
                 <div
-                    class="bg-white dark:bg-dark-surface rounded-[3rem] p-8 md:p-12 shadow-sm flex-1 flex flex-col border border-gray-100 dark:border-gray-800">
+                    class="bg-white dark:bg-dark-surface rounded-[2rem] sm:rounded-[3rem] p-4 sm:p-6 md:p-12 shadow-sm flex-1 flex flex-col border border-gray-100 dark:border-gray-800">
 
                     <div class="mb-10">
                         <h2 class="text-3xl font-black mb-3 flex items-center gap-3 tracking-tight">
@@ -1095,13 +1108,14 @@
             <section id="view-studio"
                 class="view-section hidden max-w-6xl mx-auto h-full flex flex-col animate-fade-in">
                 <!-- Header Estúdio -->
-                <div class="flex items-center gap-4 mb-8">
+                <div class="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
                     <div
-                        class="w-12 h-12 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center text-xl">
+                        class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/10 text-purple-500 rounded-2xl flex items-center justify-center text-lg sm:text-xl shrink-0">
                         <i class="fas fa-microphone-alt"></i>
                     </div>
                     <div>
-                        <h2 class="text-3xl font-black text-gray-800 dark:text-white flex items-center gap-3">
+                        <h2
+                            class="text-xl sm:text-2xl md:text-3xl font-black text-gray-800 dark:text-white flex items-center gap-2 sm:gap-3">
                             Estúdio <span
                                 class="bg-red-500 text-white text-[10px] uppercase font-black px-2 py-0.5 rounded-full tracking-widest animate-pulse">REC</span>
                         </h2>
@@ -1109,7 +1123,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 flex-1">
                     <!-- Esquerda: Container de Vídeo e Status -->
                     <div
                         class="bg-gray-900 dark:bg-black rounded-[2rem] p-4 flex flex-col shadow-xl relative overflow-hidden border border-gray-800">
@@ -1458,30 +1472,30 @@
 
                 <!-- Cabeçalho Dashboard -->
                 <div
-                    class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 bg-white dark:bg-dark-surface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    class="flex flex-col sm:flex-row sm:items-end justify-between mb-4 sm:mb-6 md:mb-8 gap-3 bg-white dark:bg-dark-surface p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
                     <div>
-                        <h2 class="text-3xl font-black flex items-center gap-3">
+                        <h2 class="text-xl sm:text-2xl md:text-3xl font-black flex items-center gap-2 sm:gap-3">
                             <i class="fas fa-chart-line text-brand"></i> Centro de Comando
                         </h2>
-                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Acompanhe seu
-                            rendimento musical e
-                            metas cadastradas.</p>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-1">Acompanhe seu rendimento
+                            musical.</p>
                     </div>
 
                     <div class="flex gap-2">
                         <button id="btn-export-backup"
-                            class="px-4 py-2 rounded-xl text-sm font-bold bg-gray-100 dark:bg-dark-element hover:bg-blue-500 hover:text-white text-gray-600 dark:text-gray-300 transition-colors flex items-center gap-2 border border-gray-200 dark:border-gray-700">
-                            <i class="fas fa-file-export"></i> Backup (JSON)
+                            class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gray-100 dark:bg-dark-element hover:bg-blue-500 hover:text-white text-gray-600 dark:text-gray-300 transition-colors flex items-center gap-1.5 sm:gap-2 border border-gray-200 dark:border-gray-700">
+                            <i class="fas fa-file-export"></i> <span class="hidden xs:inline">Backup</span> JSON
                         </button>
                         <button id="btn-reset-progress"
-                            class="px-4 py-2 rounded-xl text-sm font-bold bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center gap-2 border border-red-100 dark:border-red-900/50">
-                            <i class="fas fa-trash-alt"></i> Excluir Dados
+                            class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1.5 sm:gap-2 border border-red-100 dark:border-red-900/50">
+                            <i class="fas fa-trash-alt"></i> <span class="hidden xs:inline">Excluir</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Cards de Métricas Principais -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div
+                    class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
 
                     <!-- Tempo Hoje -->
                     <div
@@ -1559,7 +1573,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 flex-1">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-4 sm:mb-6 md:mb-8 flex-1">
                     <!-- Gráfico Principal -->
                     <div
                         class="lg:col-span-2 bg-white dark:bg-dark-surface p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col">

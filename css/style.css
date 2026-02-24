@@ -93,6 +93,7 @@ html {
 /* Sliders customizados */
 input[type=range] {
     -webkit-appearance: none;
+    appearance: none;
     background: transparent;
     width: 100%;
 }
@@ -135,14 +136,20 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 
+/* ==========================================
+   AFINADOR — Semi-círculo responsivo
+   ========================================== */
 .tuner-meter {
-    width: 320px;
-    height: 160px;
-    border-top-left-radius: 160px;
-    border-top-right-radius: 160px;
+    width: min(320px, 90vw);
+    height: min(160px, 45vw);
+    border-top-left-radius: 50% 100%;
+    border-top-right-radius: 50% 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
     background: conic-gradient(from 270deg at 50% 100%,
             #ef4444 0deg, #eab308 30deg,
             #10b981 85deg, #10b981 95deg,
@@ -158,11 +165,13 @@ input[type="number"] {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 280px;
-    height: 140px;
+    width: calc(min(320px, 90vw) * 0.875);
+    height: calc(min(160px, 45vw) * 0.875);
     background-color: #1e293b;
-    border-top-left-radius: 140px;
-    border-top-right-radius: 140px;
+    border-top-left-radius: 50% 100%;
+    border-top-right-radius: 50% 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
     box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.2);
 }
 
@@ -172,11 +181,13 @@ input[type="number"] {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 280px;
-    height: 140px;
+    width: calc(min(320px, 90vw) * 0.875);
+    height: calc(min(160px, 45vw) * 0.875);
     background-color: #ffffff;
-    border-top-left-radius: 140px;
-    border-top-right-radius: 140px;
+    border-top-left-radius: 50% 100%;
+    border-top-right-radius: 50% 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
     box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.05);
 }
 
@@ -185,11 +196,10 @@ input[type="number"] {
     bottom: 0;
     left: 50%;
     width: 4px;
-    height: 150px;
+    height: min(150px, 42vw);
     background-color: #f8fafc;
     transform-origin: bottom center;
     transform: translateX(-50%) rotate(0deg);
-    /* Suavização de hardware para o ponteiro */
     transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
     z-index: 10;
     border-radius: 2px;
@@ -275,36 +285,15 @@ input[type="number"] {
     background: rgba(0, 0, 0, 0.4);
 }
 
-/* Base style for the barre chord arrow — horizontal bar spanning all barred strings */
+/* pestana-seta: agora renderizada via SVG inline pelo JS — sem regra CSS de layout */
 .pestana-seta {
-    position: absolute;
-    height: 14px;
-    background: linear-gradient(to right, #f59e0b, #fbbf24);
-    border-radius: 7px;
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding-left: 6px;
+    pointer-events: none;
 }
 
-/* Arrowhead on the LEFT side (pointing left toward nut) */
-.pestana-seta::before {
-    content: "";
-    position: absolute;
-    left: -9px;
-    top: 50%;
-    transform: translateY(-50%);
-    border-top: 7px solid transparent;
-    border-bottom: 7px solid transparent;
-    border-right: 10px solid #f59e0b;
-}
 
 /* ==========================================
-   ETAPA 3: RESPONSIVIDADE PROFISSIONAL (MOBILE)
-   Garantias globais para PWA
+   DAW TIMELINE
    ========================================== */
-/* DAW Timeline Customizations */
 .daw-timeline {
     -webkit-appearance: none;
     appearance: none;
@@ -324,7 +313,6 @@ input[type="number"] {
     border: 1px solid #334155 !important;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
     overflow: hidden;
-    /* Mantém focus limpo dentro do border-radius */
 }
 
 .daw-timeline::-webkit-slider-runnable-track {
@@ -360,6 +348,42 @@ input[type="number"] {
     cursor: not-allowed !important;
 }
 
+
+/* ==========================================
+   RESPONSIVIDADE MOBILE — GLOBAL
+   ========================================== */
+
+/* Header compacto em mobile */
+@media (max-width: 640px) {
+    header>div {
+        height: 3.5rem !important;
+        padding-top: 0 !important;
+    }
+
+    /* Logo menor */
+    header .text-2xl {
+        font-size: 1.2rem !important;
+    }
+
+    header .text-3xl {
+        font-size: 1.5rem !important;
+    }
+
+    /* Ocultar "Modo Local" label em telas muito pequenas */
+    #user-profile-area span {
+        display: none;
+    }
+
+    #user-profile-area {
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    /* Separador do header */
+    header .h-8 {
+        display: none;
+    }
+}
+
 @media (max-width: 768px) {
 
     /* Garantir botões maiores (mínimo 48px altura) para toque */
@@ -367,8 +391,7 @@ input[type="number"] {
     .nav-btn,
     .btn-action,
     a.button {
-        min-height: 48px;
-        min-width: 48px;
+        min-height: 44px;
     }
 
     /* Espaçamento otimizado para toque */
@@ -377,10 +400,9 @@ input[type="number"] {
         width: 36px;
     }
 
-    /* Texto mínimo legível */
+    /* Texto mínimo legível — evita zoom automático no iOS */
     body {
         font-size: 15px;
-        /* Evita zoom automático no iOS em inputs e melhora a leitura */
     }
 
     /* Garante ausência de scroll lateral */
@@ -390,9 +412,442 @@ input[type="number"] {
         max-width: 100vw;
     }
 
-    /* Utilitário auxiliar global (força flex column) */
+    /* Utilitário auxiliar global */
     .mobile-col {
         display: flex !important;
         flex-direction: column !important;
+    }
+
+    /* Todas as view-sections: scroll interno + compensar navbar bottom fixa */
+    .view-section {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Headers menores no mobile */
+    .view-section h2 {
+        font-size: 1.4rem !important;
+    }
+
+    .view-section h3 {
+        font-size: 1rem !important;
+    }
+
+    /* Inputs/selects com font-size >= 16px (evita zoom automático no iOS) */
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    /* ==========================================
+       METRÔNOMO — MOBILE
+       ========================================== */
+
+    /* Painel central do metrônomo — compactar padding */
+    #view-metronome .xl\:col-span-2 {
+        padding: 1rem !important;
+    }
+
+    /* Timer/sessão: margem reduzida */
+    #view-metronome .mt-10 {
+        margin-top: 2.5rem !important;
+    }
+
+    /* Display BPM menor */
+    #bpm-display {
+        font-size: 4.5rem !important;
+        width: 9rem !important;
+    }
+
+    /* Botões +/- menores */
+    #btn-bpm-minus,
+    #btn-bpm-plus {
+        width: 2.75rem !important;
+        height: 2.75rem !important;
+        font-size: 1rem !important;
+    }
+
+    /* Texto "BATIDAS POR MINUTO" — compacto */
+    #view-metronome .tracking-\[0\.3em\],
+    #view-metronome .tracking-\[0\.2em\] {
+        font-size: 0.6rem !important;
+        letter-spacing: 0.15em !important;
+    }
+
+    /* Slider BPM — margem reduzida */
+    #bpm-slider.mb-4 {
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Tap Tempo e compasso — menores */
+    #btn-tap {
+        padding: 0.6rem 1.2rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Botão Play principal — tamanho bom para mobile */
+    #btn-play-metronome {
+        width: 5rem !important;
+        height: 5rem !important;
+        font-size: 1.5rem !important;
+    }
+
+    /* Reduzir gap entre elementos do metrônomo */
+    #view-metronome .mb-4 {
+        margin-bottom: 0.5rem !important;
+    }
+
+    #view-metronome .mb-8 {
+        margin-bottom: 1rem !important;
+    }
+
+    #view-metronome .mb-12 {
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* Painéis de configuração: padding compacto */
+    #view-metronome .rounded-\[2rem\].p-8 {
+        padding: 1rem !important;
+    }
+
+    /* ==========================================
+       AFINADOR — MOBILE
+       ========================================== */
+
+    /* Painel do afinador: padding compacto */
+    #view-tuner .p-12 {
+        padding: 1.25rem !important;
+    }
+
+    #view-tuner .p-8 {
+        padding: 1rem !important;
+    }
+
+    /* Configurações do afinador — empilhar */
+    #view-tuner .mb-10 {
+        margin-bottom: 1rem !important;
+    }
+
+    /* Espaçador do painel flutuante do afinador */
+    #view-tuner .h-16 {
+        height: 2.5rem !important;
+    }
+
+    /* Nota central do afinador */
+    #tuner-note {
+        font-size: 3.5rem !important;
+    }
+
+    #tuner-accidental {
+        font-size: 2rem !important;
+    }
+
+    /* Barra digital do afinador */
+    #view-tuner .mb-12 {
+        margin-bottom: 1rem !important;
+    }
+
+    /* Leitura de frequência */
+    #view-tuner .mt-6 {
+        margin-top: 0.75rem !important;
+    }
+
+    /* ==========================================
+       FRETBOARD — MOBILE (scroll horizontal mantido mas container menor)
+       ========================================== */
+
+    #view-fretboard .p-12 {
+        padding: 1rem !important;
+    }
+
+    #view-fretboard .mb-10 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Fretboard scroll — indicação de swipe */
+    #fretboard-container {
+        min-width: 820px;
+    }
+
+    /* ==========================================
+       ESTUDIO — MOBILE
+       ========================================== */
+
+    /* Header do estúdio */
+    #view-studio .mb-8 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    #view-studio h2 {
+        font-size: 1.3rem !important;
+    }
+
+    /* Grid do estúdio: forçar coluna única */
+    #view-studio .grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Painel de mixagem: padding compacto */
+    #view-studio .p-8 {
+        padding: 1rem !important;
+    }
+
+    /* ==========================================
+       CAMPO HARMÔNICO — MOBILE
+       ========================================== */
+
+    #view-harmony .p-12 {
+        padding: 1rem !important;
+    }
+
+    #view-harmony .mb-10 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Controles do campo harmônico */
+    #view-harmony .p-6 {
+        padding: 0.75rem !important;
+    }
+
+    /* Grid de acordes diatônicos em mobile: 2 colunas */
+    #view-harmony .lg\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* ==========================================
+       TREINO AUDITIVO — MOBILE
+       ========================================== */
+
+    #view-eartrainer .p-12 {
+        padding: 1rem !important;
+    }
+
+    #view-eartrainer .p-8 {
+        padding: 1rem !important;
+    }
+
+    /* Status bar compacta */
+    #view-eartrainer .mb-8 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* ==========================================
+       DASHBOARD — MOBILE
+       ========================================== */
+
+    /* Cards de métricas: 2 colunas em mobile */
+    #view-dashboard .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem !important;
+    }
+
+    #view-dashboard .p-6 {
+        padding: 0.875rem !important;
+    }
+
+    /* Cards de métricas: texto menor */
+    #view-dashboard .text-4xl {
+        font-size: 1.75rem !important;
+    }
+
+    /* Gráfico e conquistas em coluna */
+    #view-dashboard .lg\:grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Header do dashboard */
+    #view-dashboard .mb-8 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* ==========================================
+       FERRAMENTAS HUB — MOBILE
+       ========================================== */
+
+    #view-tools .mb-10 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Grid de ferramentas: 2 colunas lado a lado */
+    #view-tools .grid {
+        gap: 0.75rem !important;
+    }
+
+    #view-tools .p-6,
+    #view-tools .md\:p-8 {
+        padding: 0.875rem !important;
+    }
+
+    /* ==========================================
+       FERRAMENTAS EXTRAS — MOBILE
+       ========================================== */
+
+    #view-extras .p-8 {
+        padding: 1rem !important;
+    }
+
+    /* ==========================================
+       DETECTOR ANALÍTICO — MOBILE
+       ========================================== */
+
+    #view-detector .p-10 {
+        padding: 1rem !important;
+    }
+
+    #view-detector .p-8 {
+        padding: 1rem !important;
+    }
+
+    #view-detector .mb-8 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Canvas FFT menor */
+    #detector-spectrum {
+        height: 100px !important;
+    }
+
+    /* Resultado principal menor */
+    #detector-main-result {
+        font-size: 5rem !important;
+    }
+
+    /* ==========================================
+       PROFESSOR — MOBILE
+       ========================================== */
+
+    #view-professor .p-6 {
+        padding: 0.875rem !important;
+    }
+
+    #view-professor .mb-6 {
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* Grid de controles do professor: 2 colunas */
+    #view-professor .grid.grid-cols-2.md\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+    }
+
+    /* ==========================================
+       SOBRE — MOBILE
+       ========================================== */
+
+    #view-about .p-14 {
+        padding: 1.25rem !important;
+    }
+
+    #view-about .p-8 {
+        padding: 1rem !important;
+    }
+
+    #view-about .text-5xl {
+        font-size: 2.5rem !important;
+    }
+
+    #view-about .w-32 {
+        width: 5rem !important;
+        height: 5rem !important;
+        font-size: 2.5rem !important;
+    }
+
+    /* Texto do about centralizado sempre */
+    #view-about .prose {
+        text-align: center !important;
+        font-size: 0.95rem !important;
+    }
+
+    /* ==========================================
+       NAV BOTTOM — MOBILE
+       ========================================== */
+
+    /* Nav items compactos */
+    .nav-btn .w-14 {
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+    }
+
+    .nav-btn i {
+        font-size: 1.1rem !important;
+    }
+
+    .nav-btn span {
+        font-size: 0.5rem !important;
+        letter-spacing: 0.03em !important;
+    }
+
+    /* Ajuste do main para bottom nav */
+    main {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        padding-top: 0.75rem !important;
+    }
+}
+
+/* Telas muito pequenas (< 380px, ex: iPhone SE, Galaxy A) */
+@media (max-width: 380px) {
+
+    .view-section h2 {
+        font-size: 1.15rem !important;
+    }
+
+    main {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    /* Nav buttons mais compactos — 5 botões em tela estreita */
+    .nav-btn {
+        min-width: 58px !important;
+        padding: 0.4rem !important;
+    }
+
+    .nav-btn>div {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    .nav-btn i {
+        font-size: 1rem !important;
+    }
+
+    .nav-btn span {
+        font-size: 0.48rem !important;
+    }
+
+    /* BPM display menor em tela muito pequena */
+    #bpm-display {
+        font-size: 3.8rem !important;
+        width: 7.5rem !important;
+    }
+
+    /* Botões +/- menores */
+    #btn-bpm-minus,
+    #btn-bpm-plus {
+        width: 2.4rem !important;
+        height: 2.4rem !important;
+    }
+
+    /* Dashboard: cards em coluna única em tela muito pequena */
+    #view-dashboard .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* Desktop / Tablet landscape: layout normal */
+@media (min-width: 769px) {
+
+    /* Garantir que na versão desktop os painéis do metrônomo exibem corretamente */
+    #view-metronome .grid {
+        align-items: start;
+    }
+
+    /* Fretboard: largura mínima adequada para desktop */
+    #fretboard-container {
+        min-width: 900px;
     }
 }
