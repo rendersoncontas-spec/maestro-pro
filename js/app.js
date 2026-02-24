@@ -1303,12 +1303,7 @@ const FretboardApp = {
 
         let notesCount = 0;
 
-        // Cordas Soltas
-        shape.cordasSoltas.forEach(s => {
-            notesCount++;
-            const noteElement = document.querySelector(`.note-circle[data-string="${s}"][data-fret="0"]`);
-            if (noteElement) noteElement.classList.add('active');
-        });
+        // Cordas Soltas: omitir do braço principal (já aparecem no SVG mini-diagrama)
 
         // Dedos Apertados
         shape.dedos.forEach(d => {
