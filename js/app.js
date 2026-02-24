@@ -1319,7 +1319,7 @@ const FretboardApp = {
             }
         });
 
-        // Desenhar Pestana (Barre) no fretboard principal
+        // Desenhar Pestana (Barre) no fretboard principal - barra horizontal
         if (shape.pestana) {
             const startS = shape.pestana.daCorda;
             const endS = shape.pestana.ateCorda;
@@ -1327,42 +1327,39 @@ const FretboardApp = {
 
             if (barreFret > 0) {
                 setTimeout(() => {
-                    const topEl = document.querySelector(`.note-circle[data-string="${endS}"][data-fret="${barreFret}"]`);
-                    const botEl = document.querySelector(`.note-circle[data-string="${startS}"][data-fret="${barreFret}"]`);
+                    // Pegar os elementos extremos da pestana (corda mais grossa e mais fina)
+                    const elA = document.querySelector(`.note-circle[data-string="${startS}"][data-fret="${barreFret}"]`);
+                    const elB = document.querySelector(`.note-circle[data-string="${endS}"][data-fret="${barreFret}"]`);
 
-                    if (botEl && topEl) {
-                        const topRect = topEl.getBoundingClientRect();
-                        const botRect = botEl.getBoundingClientRect();
+                    if (elA && elB) {
+                        const rA = elA.getBoundingClientRect();
+                        const rB = elB.getBoundingClientRect();
                         const containerRect = document.getElementById('fretboard-container').getBoundingClientRect();
 
-                        const topY = topRect.top - containerRect.top;
-                        const botY = botRect.bottom - containerRect.top;
-                        const leftX = botRect.left - containerRect.left;
+                        // Barra HORIZONTAL: de x1 (corda mais grossa, esquerda) até x2 (corda mais fina)
+                        const x1 = Math.min(rA.left, rB.left) - containerRect.left;
+                        const x2 = Math.max(rA.right, rB.right) - containerRect.left;
+                        const barWidth = x2 - x1;
+                        const centerY = ((rA.top + rA.bottom) / 2) - containerRect.top;
 
                         const barreDiv = document.createElement('div');
-                        barreDiv.className = 'pestana-seta z-25 pointer-events-none transition-all duration-300 drop-shadow-md';
+                        barreDiv.className = 'pestana-seta z-25 pointer-events-none';
+                        barreDiv.style.left = `${x1}px`;
+                        barreDiv.style.top = `${centerY - 7}px`;
+                        barreDiv.style.width = `${barWidth}px`;
 
-                        const height = (botY - topY);
-                        barreDiv.style.top = `${topY + 16}px`;
-                        barreDiv.style.left = `${leftX + 13}px`;
-                        barreDiv.style.height = `${height}px`;
+                        // Label "1" dentro da barra
+                        const lbl = document.createElement('span');
+                        lbl.style.cssText = 'font-size:9px;font-weight:900;color:#7c2d12;margin-left:12px;';
+                        lbl.innerText = '1';
+                        barreDiv.appendChild(lbl);
 
-                        const fingerText = topEl.innerText;
-                        if (!isNaN(parseInt(fingerText))) {
-                            const numLabel = document.createElement('div');
-                            numLabel.className = 'absolute -bottom-4 -left-2.5 w-6 h-6 bg-purple-600 rounded-full text-white font-black text-xs flex items-center justify-center shadow-md z-40 border-2 border-[#3a2318] ring-1 ring-purple-400';
-                            numLabel.innerText = fingerText;
-                            barreDiv.appendChild(numLabel);
-                        }
-
-                        for (let c = startS; c <= endS; c++) {
-                            let innerNote = document.querySelector(`.note-circle[data-string="${c}"][data-fret="${barreFret}"]`);
+                        // Ocultar dots individuais cobertos pela pestana
+                        for (let c = Math.min(startS, endS); c <= Math.max(startS, endS); c++) {
+                            const innerNote = document.querySelector(`.note-circle[data-string="${c}"][data-fret="${barreFret}"]`);
                             if (innerNote) {
                                 innerNote.classList.remove('active', 'bg-brand', 'bg-purple-600');
                                 innerNote.style.opacity = '0';
-                                if (innerNote.parentElement) {
-                                    innerNote.parentElement.classList.remove('bg-white/20', 'scale-110');
-                                }
                             }
                         }
 
